@@ -1,0 +1,13 @@
+model = "gpt-5.6-sol"
+model_reasoning_effort = "high"
+sandbox_mode = "workspace-write"
+
+[agents]
+enabled = false
+max_concurrent_threads_per_session = 7
+
+[unrelated]
+keep = "yes"
+
+[projects.'c:\users\demo\documents\中文项目']
+trust_level = "trusted"

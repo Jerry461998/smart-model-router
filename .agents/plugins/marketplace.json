@@ -1,0 +1,20 @@
+{
+  "name": "smart-model-router-share",
+  "interface": {
+    "displayName": "Smart Model Router"
+  },
+  "plugins": [
+    {
+      "name": "smart-model-router",
+      "source": {
+        "source": "local",
+        "path": "./plugins/smart-model-router"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

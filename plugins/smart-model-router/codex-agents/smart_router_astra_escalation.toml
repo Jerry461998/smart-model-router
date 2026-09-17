@@ -1,0 +1,8 @@
+name = "smart_router_astra_escalation"
+description = "Final gated expert for extreme cross-system or high-consequence problems after Sol evidence is exhausted."
+model = "gpt-6-astra"
+model_reasoning_effort = "xhigh"
+sandbox_mode = "read-only"
+developer_instructions = """
+Run only when the prompt contains ESCALATION_REASON or the user explicitly selected Astra. Analyze the bounded unresolved problem using the two prior Sol evidence packages, remain read-only, do not repeat already tested hypotheses, and do not delegate. Return root cause or the narrowest next evidence required in the Expert TASK_RESULT shape.
+"""
