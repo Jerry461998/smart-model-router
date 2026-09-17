@@ -1,17 +1,30 @@
 # Smart Model Router
 
-[![Version](https://img.shields.io/badge/version-v0.1.0-blue)](https://github.com/Jerry461998/smart-model-router)
+[![Version](https://img.shields.io/badge/version-v0.1.0-blue)](https://github.com/Jerry461998/smart-model-router/releases/tag/v0.1.0)
+[![CI](https://github.com/Jerry461998/smart-model-router/actions/workflows/test.yml/badge.svg)](https://github.com/Jerry461998/smart-model-router/actions/workflows/test.yml)
 [![License](https://img.shields.io/badge/license-MIT-green)](./plugins/smart-model-router/LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)](#requirements)
 
-Smart Model Router is a Codex plugin and global routing layer that breaks software-development work into bounded phases and dispatches those phases to model-specific workers instead of using the most expensive model for everything.
+Smart Model Router is a Codex plugin and global routing layer for people who want **different models to handle different parts of a coding task** instead of running everything through the most expensive model.
 
-- **GPT-5.6 Luna** — fast exploration, mechanical edits, routine verification
-- **GPT-5.6 Terra** — normal implementation and medium-complex debugging
-- **GPT-5.6 Sol** — architecture, production, security, concurrency and consistency reasoning
-- **GPT-6 Astra** — gated escalation only after evidence-backed Sol attempts, or when explicitly requested
+It keeps the main Codex task as the coordinator, classifies bounded phases, launches model-specific workers with explicit `model` and `reasoning_effort`, verifies their output, and only escalates when the evidence justifies it.
 
-The main Codex task does not silently switch models. The coordinator launches separate workers with explicit `model` and `reasoning_effort`, verifies their output, and reports the actual route used.
+## What it does
+
+| Phase | Typical worker | Purpose |
+|---|---|---|
+| Exploration / search / mechanical edits | GPT-5.6 Luna | Fast, low-cost discovery and routine work |
+| Normal implementation / medium debugging | GPT-5.6 Terra | Main coding and integration work |
+| Architecture / production / security / consistency | GPT-5.6 Sol | High-reasoning expert analysis |
+| Final escalation | GPT-6 Astra | Gated fallback after evidence-backed Sol attempts or explicit user request |
+
+The router does **not** pretend to switch the model of an already-running main task. It dispatches separate subagents and reports the actual route used.
+
+## When to use it
+
+Use Smart Model Router when you regularly give Codex multi-step software tasks and want a more deliberate split between fast workers, implementation workers, expert reasoning, and rare escalation. It is especially useful for repository work that mixes search, implementation, verification, debugging, architecture, production incidents, CI/CD, migrations, concurrency, or security review.
+
+It is less suitable if you do not want any global Codex configuration changes, your account/workspace does not expose the configured models, or you expect a plugin to change the model of the already-running parent task in place.
 
 ## Quick start
 
@@ -124,13 +137,14 @@ python -m unittest discover -s .\tests -v
 python .\skills\smart-model-router\scripts\router.py simulate
 ```
 
-The published package was validated with the included deterministic routing and installation tests before release preparation.
+GitHub Actions runs the same Python test suite and router simulation on `windows-latest` for pushes and pull requests targeting `main`.
 
 ## Repository layout
 
 ```text
 .
 ├─ .agents/plugins/marketplace.json
+├─ .github/workflows/test.yml
 ├─ INSTALL.ps1
 ├─ STATUS.ps1
 ├─ UNINSTALL.ps1
