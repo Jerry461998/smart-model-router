@@ -1,0 +1,33 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Windows / Python 3.12
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Run unit tests
+        shell: pwsh
+        run: python -m unittest discover -s plugins/smart-model-router/tests -v
+
+      - name: Run router simulation
+        shell: pwsh
+        run: python plugins/smart-model-router/skills/smart-model-router/scripts/router.py simulate
