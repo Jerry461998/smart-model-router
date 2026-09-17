@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Global Codex routing policy for real Luna, Terra, Sol, and gated Astra workers.",
   "author": {
-    "name": "Personal"
+    "name": "Jerry461998"
   },
   "license": "MIT",
   "keywords": [
@@ -17,7 +17,7 @@
     "displayName": "Smart Model Router",
     "shortDescription": "Route Codex work across Luna, Terra, Sol, and Astra.",
     "longDescription": "Classifies coding work into bounded phases, dispatches real model-specific Codex subagents, verifies results, and gates expensive escalation with evidence.",
-    "developerName": "Personal",
+    "developerName": "Jerry461998",
     "category": "Productivity",
     "capabilities": [
       "Model routing",
