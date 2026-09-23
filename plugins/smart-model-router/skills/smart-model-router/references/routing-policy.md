@@ -10,17 +10,17 @@
 
 ## Model roles
 
-### GPT-5.6 Luna
+### GPT-6 Luna
 
 Use low or medium for repository search, file discovery, mechanical edits, deterministic transformations, syntax checks, ordinary tests, lint, fixture inspection, and independent verification of routine features. Use high only when a bounded validation task genuinely needs more care.
 
-### GPT-5.6 Terra
+### GPT-6 Sol Medium
 
-Use medium for normal product development, CRUD, ordinary backend/frontend integration, refactors, API work, and typical debugging. Use high for medium-complex integration or diagnosis. Terra is the recommended main-task default.
+Use medium for normal product development, CRUD, ordinary backend/frontend integration, refactors, API work, and typical debugging. Sol Medium is the recommended main-task default.
 
-### GPT-5.6 Sol
+### GPT-6 Sol High
 
-Use high for architecture, production incidents, cross-service behavior, reverse-proxy/deployment design, difficult PostgreSQL semantics, concurrency, transactions, data/session/cache consistency, authentication/authorization architecture, high-risk migrations, and evidence-backed issues that remain after a reasonable Terra attempt. Give Sol condensed evidence rather than mechanical exploration.
+Use high for architecture, production incidents, cross-service behavior, reverse-proxy/deployment design, difficult PostgreSQL semantics, concurrency, transactions, data/session/cache consistency, authentication/authorization architecture, high-risk migrations, and evidence-backed issues that remain after a reasonable Sol Medium attempt. Give Sol condensed evidence rather than mechanical exploration.
 
 ### GPT-6 Astra
 
@@ -31,18 +31,18 @@ Use xhigh only when the user explicitly requests Astra or two distinct Sol attem
 | Scenario | Required route |
 |---|---|
 | Change a button label | Luna low |
-| Add an ordinary Django CRUD page | Luna explore → Terra medium build → Luna verify |
+| Add an ordinary Django CRUD page | Luna explore → Sol medium build → Luna verify |
 | Search all deployment files | Luna low |
-| Intermittent production Docker+Caddy 502 | Luna collect → Terra high initial diagnosis → conditional Sol high |
-| Redesign CI/CD with rollback and migration safety | Luna collect → Sol high architecture → Terra high implementation → Luna verify → conditional Sol review |
+| Intermittent production Docker+Caddy 502 | Luna collect → Sol medium initial diagnosis → conditional Sol high |
+| Redesign CI/CD with rollback and migration safety | Luna collect → Sol high architecture and implementation → Luna verify → conditional Sol review |
 | Cross-service consistency bug after two failed Sol hypotheses | Astra xhigh with explicit reason |
 | Replace years in 1000 files | Luna low |
-| Small but complex race condition | Luna collect → Sol high reason → Terra implement → Luna verify |
+| Small but complex race condition | Luna collect → Sol high reason and implement → Luna verify |
 | Change CSS margin | Luna low |
-| Ordinary Django login-record management page | Luna explore → Terra medium implement → Luna verify |
+| Ordinary Django login-record management page | Luna explore → Sol medium implement → Luna verify |
 
 ## Failure classification
 
 Infrastructure failures include missing executables, bad paths, permissions, locks, missing fixtures, malformed commands, dependency absence, timeouts without evidence of a stall, and insufficient context. Correct the cause without model escalation.
 
-Reasoning failures include contradictory evidence after a tested hypothesis, unresolved transaction semantics, cross-worker state inconsistency, production/local divergence after environment evidence is complete, or a high-consequence architecture ambiguity. These may justify Terra→Sol or Sol→Astra.
+Reasoning failures include contradictory evidence after a tested hypothesis, unresolved transaction semantics, cross-worker state inconsistency, production/local divergence after environment evidence is complete, or a high-consequence architecture ambiguity. These may justify Sol Medium→Sol High or Sol→Astra.

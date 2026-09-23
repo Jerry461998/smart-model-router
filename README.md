@@ -1,6 +1,6 @@
 # Smart Model Router
 
-[![Version](https://img.shields.io/badge/version-v0.1.0-blue)](https://github.com/Jerry461998/smart-model-router/releases/tag/v0.1.0)
+[![Model family](https://img.shields.io/badge/models-GPT--6-blue)](./plugins/smart-model-router/.codex-plugin/plugin.json)
 [![CI](https://github.com/Jerry461998/smart-model-router/actions/workflows/test.yml/badge.svg)](https://github.com/Jerry461998/smart-model-router/actions/workflows/test.yml)
 [![License](https://img.shields.io/badge/license-MIT-green)](./plugins/smart-model-router/LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)](#requirements)
@@ -13,9 +13,9 @@ It keeps the main Codex task as the coordinator, classifies bounded phases, laun
 
 | Phase | Typical worker | Purpose |
 |---|---|---|
-| Exploration / search / mechanical edits | GPT-5.6 Luna | Fast, low-cost discovery and routine work |
-| Normal implementation / medium debugging | GPT-5.6 Terra | Main coding and integration work |
-| Architecture / production / security / consistency | GPT-5.6 Sol | High-reasoning expert analysis |
+| Exploration / search / mechanical edits | GPT-6 Luna Low | Fast, low-cost discovery and routine work |
+| Normal implementation / medium debugging | GPT-6 Sol Medium | Main coding and integration work |
+| Architecture / production / security / consistency | GPT-6 Sol High | High-reasoning expert analysis |
 | Final escalation | GPT-6 Astra | Gated fallback after evidence-backed Sol attempts or explicit user request |
 
 The router does **not** pretend to switch the model of an already-running main task. It dispatches separate subagents and reports the actual route used.
@@ -66,7 +66,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\UNINSTALL.ps1
 - Codex CLI / Codex desktop with plugin and subagent support
 - Access to the models used by the configured workers
 
-Tested against Codex CLI `0.153.4`, Codex desktop `26.901.6511.0`, Windows NT `10.0.26200.0`, and PowerShell `7.6.5`.
+The GPT-6 update was tested against Codex CLI `0.154.0` on Windows. Model availability depends on account rollout and workspace settings.
 
 ## What the installer changes
 
@@ -79,17 +79,17 @@ The installer is idempotent and creates timestamped backups before configuration
 - root Codex defaults in `%USERPROFILE%\.codex\config.toml`
 - install state and backups under `%USERPROFILE%\.codex\smart-model-router`
 
-The default root model is set to `gpt-5.6-terra` with `medium` reasoning. Uninstall restores the pre-install root/agent settings recorded in install state and preserves owned files that were modified after installation.
+The default root model is set to `gpt-6-sol` with `medium` reasoning. Uninstall restores the pre-install root/agent settings recorded in install state and preserves owned files that were modified after installation. Existing, unchanged Terra-named profiles from v0.1.0 are removed during upgrade.
 
 ## Routing overview
 
 | Work | Default route |
 |---|---|
 | Text/CSS, search, deterministic bulk edit | Luna low |
-| Ordinary CRUD / website feature | Luna explore → Terra implement → Luna verify |
-| Medium integration / debugging | Luna collect → Terra high diagnose/build → Luna verify |
-| Production-only / cross-service incident | Luna collect → Terra initial diagnosis → conditional Sol high |
-| Architecture / CI-CD / DB consistency / concurrency | Luna collect → Sol high reason → Terra implement → Luna verify |
+| Ordinary CRUD / website feature | Luna explore → Sol medium implement → Luna verify |
+| Medium integration / debugging | Luna collect → Sol medium diagnose/build → Luna verify; Sol high when needed |
+| Production-only / cross-service incident | Luna collect → Sol medium initial diagnosis → conditional Sol high |
+| Architecture / CI-CD / DB consistency / concurrency | Luna collect → Sol high reason/implement → Luna verify |
 | Consequential architecture / security review | Optional Sol high review |
 | Two distinct Sol failures on an extreme problem | Astra xhigh with `ESCALATION_REASON` |
 
@@ -105,8 +105,7 @@ Global AGENTS.md managed rule + smart-model-router skill
 Deterministic phase classification (router.py)
         |
         +--> Luna explorer / verifier
-        +--> Terra builder / diagnostician
-        +--> Sol expert
+        +--> Sol builder / diagnostician / expert
         `--> Astra escalation (gated)
         |
         v
@@ -171,9 +170,9 @@ GitHub Actions runs the same Python test suite and router simulation on `windows
 
 ## Version
 
-Current plugin version: **v0.1.0**.
+Current plugin build: **`0.1.0+codex.20260923020300`** (GPT-6 routing update). The original v0.1.0 release remains available as historical reference.
 
-See [CHANGELOG.md](./CHANGELOG.md) and [RELEASE_NOTES_v0.1.0.md](./RELEASE_NOTES_v0.1.0.md).
+See [CHANGELOG.md](./CHANGELOG.md) for the current changes and [RELEASE_NOTES_v0.1.0.md](./RELEASE_NOTES_v0.1.0.md) for the original release.
 
 ## License
 

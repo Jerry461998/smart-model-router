@@ -26,7 +26,8 @@ try {
     & (Join-Path $packageRoot 'scripts\install.ps1') -CodexRoot $codexRoot -PluginHome $pluginHome -MarketplacePath $marketplacePath -SkipPluginCommand | Out-Null
     $config = [System.IO.File]::ReadAllText((Join-Path $codexRoot 'config.toml'), $utf8)
     Assert-True ($config.Contains('# SMART-MODEL-ROUTER:ROOT-BEGIN')) 'managed root block missing'
-    Assert-True ($config.Contains('model = "gpt-5.6-terra"')) 'Terra root missing'
+    Assert-True ($config.Contains('model = "gpt-6-sol"')) 'GPT-6 Sol root missing'
+    Assert-True ($config.Contains('default_subagent_model = "gpt-6-luna"')) 'GPT-6 Luna subagent default missing'
     Assert-True ($config.Contains('max_concurrent_threads_per_session = 3')) 'managed concurrency missing'
     Assert-True ($config.Contains('[unrelated]')) 'unrelated config section lost'
     Assert-True ($config.Contains($expectedProjectLine)) 'UTF-8 project path was corrupted'

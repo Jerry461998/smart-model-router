@@ -115,7 +115,7 @@ function Set-SmrConfig {
     }
     $rootBlock = @(
         $script:SmrRootBegin,
-        'model = "gpt-5.6-terra"',
+        'model = "gpt-6-sol"',
         'model_reasoning_effort = "medium"',
         $script:SmrRootEnd,
         ''
@@ -134,7 +134,7 @@ function Set-SmrConfig {
             $script:SmrAgentsBegin,
             'enabled = true',
             'max_concurrent_threads_per_session = 3',
-            'default_subagent_model = "gpt-5.6-luna"',
+            'default_subagent_model = "gpt-6-luna"',
             'default_subagent_reasoning_effort = "medium"',
             'interrupt_message = true',
             $script:SmrAgentsEnd
@@ -147,7 +147,7 @@ function Set-SmrConfig {
             '[agents]',
             'enabled = true',
             'max_concurrent_threads_per_session = 3',
-            'default_subagent_model = "gpt-5.6-luna"',
+            'default_subagent_model = "gpt-6-luna"',
             'default_subagent_reasoning_effort = "medium"',
             'interrupt_message = true',
             $script:SmrAgentsEnd,

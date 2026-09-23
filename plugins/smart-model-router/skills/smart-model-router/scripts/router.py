@@ -10,11 +10,10 @@ from dataclasses import asdict, dataclass
 from typing import Iterable
 
 
-POLICY_VERSION = "1.0.0"
+POLICY_VERSION = "2.0.0"
 MODELS = {
-    "luna": "gpt-5.6-luna",
-    "terra": "gpt-5.6-terra",
-    "sol": "gpt-5.6-sol",
+    "luna": "gpt-6-luna",
+    "sol": "gpt-6-sol",
     "astra": "gpt-6-astra",
 }
 
@@ -45,7 +44,7 @@ def _has(text: str, *patterns: str) -> bool:
 
 
 def _explicit_model(text: str) -> str | None:
-    for model in ("luna", "terra", "sol", "astra"):
+    for model in ("luna", "sol", "astra"):
         if _has(
             text,
             rf"只(?:使用|用)\s*{model}",
@@ -70,7 +69,7 @@ def _observability(phases: Iterable[Phase]) -> list[str]:
     lines = ["Routing:"]
     for item in phases:
         suffix = " (conditional)" if item.mode == "conditional" else ""
-        short = item.model.replace("gpt-5.6-", "").replace("gpt-6-", "").title()
+        short = item.model.replace("gpt-6-", "").title()
         lines.append(f"- {item.phase.title()} -> {short} {item.effort}{suffix}")
     return lines
 
@@ -146,7 +145,7 @@ def route_prompt(
         phases = [
             _phase("collect", "luna", "low", "smart_router_luna_explorer", "mechanical inventory of current deployment state"),
             _phase("architecture", "sol", "high", "smart_router_sol_expert", "high-consequence deployment and migration-safety design"),
-            _phase("implement", "terra", "high", "smart_router_terra_diagnostician", "bounded CI/CD implementation from approved architecture"),
+            _phase("implement", "sol", "high", "smart_router_sol_diagnostician", "bounded CI/CD implementation from approved architecture"),
             _phase("verify", "luna", "medium", "smart_router_luna_verifier", "deterministic workflow and configuration checks"),
             _phase("review", "sol", "high", "smart_router_sol_expert", "consequential production architecture review", "conditional"),
         ]
@@ -160,8 +159,8 @@ def route_prompt(
     ):
         phases = [
             _phase("collect", "luna", "low", "smart_router_luna_explorer", "collect Docker, proxy, permissions, health, and log evidence"),
-            _phase("diagnose", "terra", "high", "smart_router_terra_diagnostician", "initial evidence-based integration diagnosis"),
-            _phase("expert", "sol", "high", "smart_router_sol_expert", "production-only cross-service ambiguity after Terra evidence", "conditional"),
+            _phase("diagnose", "sol", "medium", "smart_router_sol_builder", "initial evidence-based integration diagnosis"),
+            _phase("expert", "sol", "high", "smart_router_sol_expert", "production-only cross-service ambiguity after initial diagnosis", "conditional"),
             _phase("verify", "luna", "medium", "smart_router_luna_verifier", "targeted regression and configuration verification", "conditional"),
         ]
         return _result(text, "complex-debug", phases, forbidden_astra, False, escalation_reason)
@@ -174,7 +173,7 @@ def route_prompt(
         phases = [
             _phase("collect", "luna", "low", "smart_router_luna_explorer", "map the narrow concurrency path and existing tests"),
             _phase("reason", "sol", "high", "smart_router_sol_expert", "concurrency or transaction semantics require expert reasoning"),
-            _phase("implement", "terra", "high", "smart_router_terra_diagnostician", "bounded fix guided by the expert result"),
+            _phase("implement", "sol", "high", "smart_router_sol_diagnostician", "bounded fix guided by the expert result"),
             _phase("verify", "luna", "medium", "smart_router_luna_verifier", "deterministic regression and concurrency tests"),
         ]
         return _result(text, "complex-consistency", phases, forbidden_astra, False, escalation_reason)
@@ -186,7 +185,7 @@ def route_prompt(
     ):
         phases = [
             _phase("explore", "luna", "low", "smart_router_luna_explorer", "map announcement model, API, UI, and tests"),
-            _phase("implement", "terra", "medium", "smart_router_terra_builder", "ordinary bounded full-stack feature implementation"),
+            _phase("implement", "sol", "medium", "smart_router_sol_builder", "ordinary bounded full-stack feature implementation"),
             _phase("verify", "luna", "medium", "smart_router_luna_verifier", "independent behavior and regression verification"),
         ]
         return _result(text, "ordinary-feature", phases, forbidden_astra, False, escalation_reason)
@@ -198,7 +197,7 @@ def route_prompt(
     ):
         phases = [
             _phase("explore", "luna", "low", "smart_router_luna_explorer", "bounded repository mapping"),
-            _phase("implement", "terra", "medium", "smart_router_terra_builder", "ordinary product implementation"),
+            _phase("implement", "sol", "medium", "smart_router_sol_builder", "ordinary product implementation"),
             _phase("verify", "luna", "medium", "smart_router_luna_verifier", "independent routine verification"),
         ]
         return _result(text, "ordinary-feature", phases, forbidden_astra, False, escalation_reason)
@@ -224,14 +223,14 @@ def route_prompt(
         phases = [
             _phase("collect", "luna", "low", "smart_router_luna_explorer", "collect current-state evidence"),
             _phase("reason", "sol", "high", "smart_router_sol_expert", "high-consequence or cross-system reasoning"),
-            _phase("implement", "terra", "high", "smart_router_terra_diagnostician", "bounded implementation from expert guidance", "conditional"),
+            _phase("implement", "sol", "high", "smart_router_sol_diagnostician", "bounded implementation from expert guidance", "conditional"),
             _phase("verify", "luna", "medium", "smart_router_luna_verifier", "independent verification", "conditional"),
         ]
         return _result(text, "complex", phases, forbidden_astra, False, escalation_reason)
 
     phases = [
         _phase("explore", "luna", "low", "smart_router_luna_explorer", "cheap bounded context collection"),
-        _phase("implement", "terra", "medium", "smart_router_terra_builder", "default ordinary development worker"),
+        _phase("implement", "sol", "medium", "smart_router_sol_builder", "default ordinary development worker"),
         _phase("verify", "luna", "medium", "smart_router_luna_verifier", "independent routine verification"),
     ]
     return _result(text, "ordinary", phases, forbidden_astra, False, escalation_reason)
@@ -250,7 +249,7 @@ def _result(
         "prompt": prompt,
         "task_class": task_class,
         "quota_aware_routing": "disabled-no-reliable-api",
-        "default_root": {"model": MODELS["terra"], "effort": "medium"},
+        "default_root": {"model": MODELS["sol"], "effort": "medium"},
         "phases": [asdict(item) for item in phases],
         "escalation": {
             "astra_forbidden": astra_forbidden,

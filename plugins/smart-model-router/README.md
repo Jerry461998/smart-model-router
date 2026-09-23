@@ -2,9 +2,9 @@
 
 `smart-model-router` is a personal Codex plugin and global configuration layer that routes bounded software-development phases to real model-specific subagents:
 
-- GPT-5.6 Luna: fast exploration, mechanical work, and routine verification.
-- GPT-5.6 Terra: normal implementation and medium-complex debugging.
-- GPT-5.6 Sol: architecture, production, concurrency, transaction, security, and consistency reasoning.
+- GPT-6 Luna: fast exploration, mechanical work, and routine verification.
+- GPT-6 Sol Medium: normal implementation and medium-complex debugging.
+- GPT-6 Sol High: architecture, production, concurrency, transaction, security, and consistency reasoning.
 - GPT-6 Astra: final escalation after two evidence-backed Sol attempts, or when the user explicitly requests Astra.
 
 The active main task does not change models. The coordinator starts separate workers with explicit `model` and `reasoning_effort`, receives compact results, checks the actual diff/tests, and reports the actual worker route.
@@ -21,8 +21,7 @@ Global AGENTS.md managed rule + implicit smart-model-router skill
 Deterministic phase classification (router.py)
         |
         +--> Luna explorer / verifier
-        +--> Terra builder / diagnostician
-        +--> Sol expert
+        +--> Sol builder / diagnostician / expert
         `--> Astra escalation (gated)
         |
         v
@@ -55,7 +54,7 @@ The installer is idempotent. It creates timestamped backups before each configur
 
 ## Enable and disable
 
-Disable automatic routing while keeping the source, profiles, backups, and Terra default:
+Disable automatic routing while keeping the source, profiles, backups, and Sol default:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\plugins\smart-model-router\scripts\disable.ps1"
@@ -82,18 +81,17 @@ Uninstall removes only the plugin entry/source, managed global blocks, and uncha
 | Work | Default route |
 |---|---|
 | Text/CSS change, search, deterministic bulk edit | Luna low |
-| Ordinary CRUD or website feature | Luna low explore → Terra medium implement → Luna medium verify |
-| Medium integration/debugging | Luna collect → Terra high diagnose/build → Luna verify |
-| Production-only or cross-service incident | Luna collect → Terra initial diagnosis → conditional Sol high |
-| Architecture, CI/CD safety, database consistency, concurrency | Luna collect → Sol high reason → Terra implement → Luna verify |
+| Ordinary CRUD or website feature | Luna low explore → Sol medium implement → Luna medium verify |
+| Medium integration/debugging | Luna collect → Sol medium diagnose/build → Luna verify; Sol high when needed |
+| Production-only or cross-service incident | Luna collect → Sol medium initial diagnosis → conditional Sol high |
+| Architecture, CI/CD safety, database consistency, concurrency | Luna collect → Sol high reason/implement → Luna verify |
 | Consequential architecture/security review | Optional Sol high review |
 | Two distinct Sol failures on an extreme problem | Astra xhigh with `ESCALATION_REASON` |
 
 ## Reasoning effort
 
 - Luna: low for exploration/mechanical work; medium for verification; high only for unusually demanding bounded validation.
-- Terra: medium for normal development; high for integration/debugging.
-- Sol: high for expert reasoning; xhigh only when evidence justifies a deeper Sol pass.
+- Sol: medium for normal development; high for demanding debugging and expert reasoning; xhigh only when evidence justifies a deeper Sol pass.
 - Astra: xhigh for the gated final escalation. Ultra is never selected automatically by this package.
 
 ## User overrides
@@ -114,7 +112,7 @@ Workers receive bounded prompts with goal, relevant files, known facts, constrai
 
 ## Verification
 
-Every code change requires proportionate checks. Routine verification is independent Luna work. Terra investigates moderately complex test failures. Sol reviews only consequential architecture, security, production, migration, or consistency changes. A tool/path/dependency/permission failure does not trigger model escalation.
+Every code change requires proportionate checks. Routine verification is independent Luna work. Sol investigates moderately complex test failures and reviews consequential architecture, security, production, migration, or consistency changes. A tool/path/dependency/permission failure does not trigger model escalation.
 
 Run the deterministic suite:
 
@@ -138,11 +136,11 @@ Codex surfaces subagent cards/tasks in supported clients. For exact audit proof,
 
 ## Default root model
 
-The installer sets the personal default root to `gpt-5.6-terra` with `medium` reasoning. This is the recommended long-term normal setting. A root task already started with Sol remains Sol, but the global rule still instructs it to dispatch simple bounded phases to Luna.
+The installer sets the personal default root to `gpt-6-sol` with `medium` reasoning. This is the recommended long-term normal setting. A root task already started with Sol remains Sol, but the global rule still instructs it to dispatch simple bounded phases to Luna. GPT-6 has Luna, Sol, and Astra; it has no Terra tier.
 
 ## Windows notes
 
-- Tested against Codex CLI `0.153.4`, Codex desktop `26.901.6511.0`, Windows NT `10.0.26200.0`, and PowerShell `7.6.5`.
+- The GPT-6 migration was tested against Codex CLI `0.154.0` on Windows 11. Model availability depends on account rollout; verify with a real child task as well as the local model catalog.
 - Use `powershell.exe -NoProfile -ExecutionPolicy Bypass -File ...` for installer scripts.
 - The installer uses literal resolved paths and never calls the Unix-only `codex app-server daemon` lifecycle.
 - Newly installed or updated plugins and skills are loaded in a new Codex task/session.
@@ -153,11 +151,11 @@ The installer sets the personal default root to `gpt-5.6-terra` with `medium` re
 - Implicit skill selection is model-driven. The global `AGENTS.md` managed rule strengthens automatic activation, but a user's explicit instruction or higher-priority product policy can override it.
 - Plugin packaging does not currently bundle personal custom-agent TOML profiles as a first-class plugin component, so the installer manages those profiles separately.
 - There is no reliable percentage-based Plus quota API used by this package. `quota-aware-routing` remains disabled; routing is capability- and evidence-based.
-- Runtime availability can change with account/workspace policy. `codex debug models` and a real child-session probe are the reliable local checks.
+- Runtime availability can change with account/workspace policy. If `codex debug models` appears incomplete, use a real child-session probe to verify access to the selected GPT-6 workers.
 
 ## Updating
 
-Update the source package, bump the plugin version, run its tests and validators, then rerun `install.ps1`. The installer refreshes owned files and calls `codex plugin add smart-model-router@personal`. Start a new task after updating.
+Update the source package, refresh the plugin cachebuster, run its tests and validators, then rerun `install.ps1`. The installer refreshes owned files and calls `codex plugin add smart-model-router@personal`. Start a new task after updating.
 
 ## Troubleshooting
 
@@ -169,4 +167,4 @@ Update the source package, bump the plugin version, run its tests and validators
 
 ## Open-source references
 
-The design considered `orange-the-weak/codex-auto-model-router` and `capitalparser/codex-model-router`, both MIT-licensed. This implementation borrows architectural ideas such as deterministic classification, bounded worker prompts, fail-open handling, evidence-gated escalation, and actual-execution reporting. It is an original implementation adapted for a global Windows installation, Terra Medium root default, explicit Astra gate, this machine's current Codex schema, and the requested routing cases. See `THIRD_PARTY_NOTICES.md`.
+The design considered `orange-the-weak/codex-auto-model-router` and `capitalparser/codex-model-router`, both MIT-licensed. This implementation borrows architectural ideas such as deterministic classification, bounded worker prompts, fail-open handling, evidence-gated escalation, and actual-execution reporting. It is an original implementation adapted for a global Windows installation, GPT-6 Sol Medium root default, explicit Astra gate, this machine's current Codex schema, and the requested routing cases. See `THIRD_PARTY_NOTICES.md`.

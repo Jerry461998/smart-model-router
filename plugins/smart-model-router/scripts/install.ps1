@@ -8,6 +8,7 @@ param(
 . (Join-Path $PSScriptRoot 'common.ps1')
 
 $sourceRoot = Split-Path -Parent $PSScriptRoot
+$sourceManifest = Read-Utf8Text -Path (Join-Path $sourceRoot '.codex-plugin\plugin.json') | ConvertFrom-Json
 $pluginTarget = Join-Path $PluginHome 'smart-model-router'
 $stateRoot = Join-Path $CodexRoot 'smart-model-router'
 $statePath = Join-Path $stateRoot 'install-state.json'
@@ -55,13 +56,34 @@ if ($sourceResolved -ne $targetResolved) {
     }
 }
 
+# A 1.x installation used Terra-named profiles. Remove only unchanged files
+# recorded as owned by the previous installation.
+foreach ($legacyName in @('smart_router_terra_builder.toml','smart_router_terra_diagnostician.toml')) {
+    if (-not $priorState -or -not $priorState.agentHashes) { continue }
+    $legacyProperty = $priorState.agentHashes.PSObject.Properties[$legacyName]
+    if (-not $legacyProperty) { continue }
+    $installedLegacy = Join-Path $agentTargetDir $legacyName
+    if (Test-Path -LiteralPath $installedLegacy) {
+        $currentHash = (Get-FileHash -LiteralPath $installedLegacy -Algorithm SHA256).Hash
+        if ($currentHash -ne [string]$legacyProperty.Value) { throw "Modified legacy agent requires manual review: $installedLegacy" }
+        Remove-Item -LiteralPath $installedLegacy -Force
+    }
+    $copiedLegacy = Join-Path $pluginTarget "codex-agents\$legacyName"
+    if (Test-Path -LiteralPath $copiedLegacy) {
+        $currentHash = (Get-FileHash -LiteralPath $copiedLegacy -Algorithm SHA256).Hash
+        if ($currentHash -ne [string]$legacyProperty.Value) { throw "Modified legacy package profile requires manual review: $copiedLegacy" }
+        Remove-Item -LiteralPath $copiedLegacy -Force
+    }
+}
+
 $installedAgentHashes = [ordered]@{}
 foreach ($agentSource in Get-ChildItem -LiteralPath (Join-Path $sourceRoot 'codex-agents') -Filter '*.toml' -File) {
     $agentTarget = Join-Path $agentTargetDir $agentSource.Name
-    if ((Test-Path -LiteralPath $agentTarget) -and -not $priorState) {
+    if (Test-Path -LiteralPath $agentTarget) {
         $sourceHash = (Get-FileHash -LiteralPath $agentSource.FullName -Algorithm SHA256).Hash
         $targetHash = (Get-FileHash -LiteralPath $agentTarget -Algorithm SHA256).Hash
-        if ($sourceHash -ne $targetHash) {
+        $ownedHash = if ($priorState -and $priorState.agentHashes -and $priorState.agentHashes.PSObject.Properties[$agentSource.Name]) { [string]$priorState.agentHashes.PSObject.Properties[$agentSource.Name].Value } else { '' }
+        if ($sourceHash -ne $targetHash -and $ownedHash -ne $targetHash) {
             throw "Agent profile already exists and is not identical to this package: $agentTarget"
         }
     }
@@ -78,15 +100,21 @@ if ($marketplaceText.Trim()) {
 } else {
     $marketplace = [pscustomobject]@{ name = 'personal'; interface = [pscustomobject]@{ displayName = 'Personal' }; plugins = @() }
 }
-$kept = @($marketplace.plugins | Where-Object { $_.name -ne 'smart-model-router' })
+$existingEntries = @($marketplace.plugins | Where-Object { $_.name -eq 'smart-model-router' })
+if ($existingEntries.Count -gt 1) { throw 'Duplicate smart-model-router marketplace entries require review.' }
+if ($existingEntries.Count -eq 1 -and ($existingEntries[0].source.source -ne 'local' -or $existingEntries[0].source.path -ne './plugins/smart-model-router')) {
+    throw 'Existing smart-model-router marketplace source does not match the package.'
+}
 $entry = [pscustomobject]@{
     name = 'smart-model-router'
     source = [pscustomobject]@{ source = 'local'; path = './plugins/smart-model-router' }
     policy = [pscustomobject]@{ installation = 'AVAILABLE'; authentication = 'ON_INSTALL' }
     category = 'Productivity'
 }
-$marketplace.plugins = @($kept) + @($entry)
-Write-Utf8NoBom -Path $MarketplacePath -Text (($marketplace | ConvertTo-Json -Depth 20) + "`r`n")
+if ($existingEntries.Count -eq 0) {
+    $marketplace.plugins = @($marketplace.plugins) + @($entry)
+    Write-Utf8NoBom -Path $MarketplacePath -Text (($marketplace | ConvertTo-Json -Depth 20) + "`r`n")
+}
 
 if (-not $SkipPluginCommand) {
     $codex = Get-CodexCommand
@@ -95,7 +123,7 @@ if (-not $SkipPluginCommand) {
 }
 
 $state = [ordered]@{
-    version = '0.1.0'
+    version = [string]$sourceManifest.version
     installedAt = (Get-Date).ToUniversalTime().ToString('o')
     sourceRoot = $sourceRoot
     pluginTarget = $pluginTarget

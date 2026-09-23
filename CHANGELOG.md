@@ -2,6 +2,17 @@
 
 All notable changes to Smart Model Router are documented here.
 
+## [0.1.0+codex.20260923020300] - 2026-09-23
+
+### GPT-6 routing update
+
+- Route all active root and worker phases through GPT-6 Luna, Sol, and gated Astra.
+- Set GPT-6 Sol Medium as the default root and GPT-6 Luna as the default subagent.
+- Replace Terra-named worker profiles with Sol builder and diagnostician profiles; safely remove unchanged legacy profiles during upgrade.
+- Keep Luna for mechanical exploration and independent verification, Sol Medium for ordinary implementation, Sol High for complex reasoning, and Astra for evidence-gated escalation.
+- Update policy, documentation, installer status, and 17 deterministic routing tests.
+- Preserve v0.1.0 release notes as historical documentation.
+
 ## [0.1.0] - 2026-09-17
 
 ### Added

@@ -1,7 +1,7 @@
 {
   "name": "smart-model-router",
-  "version": "0.1.0",
-  "description": "Global Codex routing policy for real Luna, Terra, Sol, and gated Astra workers.",
+  "version": "0.1.0+codex.20260923020300",
+  "description": "Global Codex routing policy for GPT-6 Luna, Sol, and gated Astra workers.",
   "author": {
     "name": "Jerry461998"
   },
@@ -15,7 +15,7 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Smart Model Router",
-    "shortDescription": "Route Codex work across Luna, Terra, Sol, and Astra.",
+    "shortDescription": "Route Codex work across GPT-6 Luna, Sol, and Astra.",
     "longDescription": "Classifies coding work into bounded phases, dispatches real model-specific Codex subagents, verifies results, and gates expensive escalation with evidence.",
     "developerName": "Jerry461998",
     "category": "Productivity",
