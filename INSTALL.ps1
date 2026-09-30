@@ -5,3 +5,4 @@ if (-not (Test-Path -LiteralPath $installer)) {
     throw "Installer not found: $installer"
 }
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File $installer
+exit $LASTEXITCODE

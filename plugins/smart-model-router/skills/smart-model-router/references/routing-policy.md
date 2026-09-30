@@ -12,15 +12,27 @@
 
 ### GPT-6 Luna
 
-Use low or medium for repository search, file discovery, mechanical edits, deterministic transformations, syntax checks, ordinary tests, lint, fixture inspection, and independent verification of routine features. Use high only when a bounded validation task genuinely needs more care.
+Use low for repository search, file discovery, mechanical edits and deterministic transformations. Use medium for independent routine tests, lint, syntax and regression verification. Use high only when a bounded validation task needs more care.
 
-### GPT-6 Sol Medium
+### GPT-6.1 Sol Low
+
+Use low for a local nonmechanical behavior fix with a clear acceptance criterion, such as a bounded off-by-one correction or guard clause. Keep mechanical edits on Luna low and complex/security/production changes on Sol high.
+
+### GPT-6.1 Sol Medium
 
 Use medium for normal product development, CRUD, ordinary backend/frontend integration, refactors, API work, and typical debugging. Sol Medium is the recommended main-task default.
 
-### GPT-6 Sol High
+### GPT-6.1 Sol High
 
 Use high for architecture, production incidents, cross-service behavior, reverse-proxy/deployment design, difficult PostgreSQL semantics, concurrency, transactions, data/session/cache consistency, authentication/authorization architecture, high-risk migrations, and evidence-backed issues that remain after a reasonable Sol Medium attempt. Give Sol condensed evidence rather than mechanical exploration.
+
+### GPT-6.1 Sol Xhigh retry
+
+After one completed evidence-backed complex Sol attempt remains unresolved, use xhigh for the serious retry. Keep conditional phases conditional and analysis-only work read-only. Prefer this retry before automatic Astra; a failure count alone does not establish evidence. The coordinator verifies two distinct tested hypotheses and concrete results before the final gate.
+
+Generic Sol selects `gpt-6.1-sol`. Stable Sol profiles use medium/high/high; dispatch a native default worker with explicit model and effort if a locked profile cannot run low/xhigh. An explicit `gpt-6-sol` request selects that model. See [official model documentation](https://developers.openai.com/api/docs/models/gpt-6.1-sol).
+
+If GPT-6.1 Sol is unavailable, disclose the runtime limitation and use GPT-6 Sol at the same effort only when available and compatible with user instructions. A user requiring only GPT-6.1 Sol needs the blocker reported. Model availability is infrastructure; it never counts as a Sol reasoning failure or triggers Astra.
 
 ### GPT-6 Astra
 
@@ -45,4 +57,4 @@ Use xhigh only when the user explicitly requests Astra or two distinct Sol attem
 
 Infrastructure failures include missing executables, bad paths, permissions, locks, missing fixtures, malformed commands, dependency absence, timeouts without evidence of a stall, and insufficient context. Correct the cause without model escalation.
 
-Reasoning failures include contradictory evidence after a tested hypothesis, unresolved transaction semantics, cross-worker state inconsistency, production/local divergence after environment evidence is complete, or a high-consequence architecture ambiguity. These may justify Sol Medium→Sol High or Sol→Astra.
+Reasoning failures include contradictory evidence after a tested hypothesis, unresolved transaction semantics, cross-worker state inconsistency, production/local divergence after environment evidence is complete, or a high-consequence architecture ambiguity. These may justify Sol Medium→Sol High, an evidence-backed Sol Xhigh retry, then Astra after the full gate. The `--sol-failures` flag is a coordinator attestation of completed reasoning attempts; it is not evidence by itself.

@@ -11,6 +11,7 @@ $pluginTarget = Join-Path $PluginHome 'smart-model-router'
 $configPath = Join-Path $CodexRoot 'config.toml'
 $agentsPath = Join-Path $CodexRoot 'AGENTS.md'
 $config = if (Test-Path -LiteralPath $configPath) { Read-Utf8Text -Path $configPath } else { '' }
+$rootConfig = ($config -split '(?m)^[ \t]*\[', 2)[0]
 $agents = if (Test-Path -LiteralPath $agentsPath) { Read-Utf8Text -Path $agentsPath } else { '' }
 $marketplacePresent = $false
 if (Test-Path -LiteralPath $MarketplacePath) {
@@ -29,7 +30,7 @@ if (-not $SkipPluginCommand) {
     pluginSourcePresent = Test-Path -LiteralPath $pluginTarget
     marketplaceEntryPresent = $marketplacePresent
     configManaged = $config.Contains($script:SmrRootBegin) -and $config.Contains($script:SmrAgentsBegin)
-    defaultRootSolMedium = $config.Contains('model = "gpt-6-sol"') -and $config.Contains('model_reasoning_effort = "medium"')
+    defaultRootSolMedium = ($rootConfig -match '(?m)^[ \t]*model[ \t]*=[ \t]*"gpt-6\.1-sol"[ \t]*(?:#[^\r\n]*)?\r?$') -and ($rootConfig -match '(?m)^[ \t]*model_reasoning_effort[ \t]*=[ \t]*"medium"[ \t]*(?:#[^\r\n]*)?\r?$')
     defaultSubagentLuna = $config.Contains('default_subagent_model = "gpt-6-luna"')
     legacyTerraProfilesPresent = @(Get-ChildItem -LiteralPath (Join-Path $CodexRoot 'agents') -Filter 'smart_router_terra_*.toml' -File -ErrorAction SilentlyContinue).Count -gt 0
     globalInstructionEnabled = $agents.Contains($script:SmrGlobalBegin)

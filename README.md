@@ -14,11 +14,19 @@ It keeps the main Codex task as the coordinator, classifies bounded phases, laun
 | Phase | Typical worker | Purpose |
 |---|---|---|
 | Exploration / search / mechanical edits | GPT-6 Luna Low | Fast, low-cost discovery and routine work |
-| Normal implementation / medium debugging | GPT-6 Sol Medium | Main coding and integration work |
-| Architecture / production / security / consistency | GPT-6 Sol High | High-reasoning expert analysis |
+| Normal implementation / medium debugging | GPT-6.1 Sol Medium | Main coding and integration work |
+| Architecture / production / security / consistency | GPT-6.1 Sol High | High-reasoning expert analysis |
 | Final escalation | GPT-6 Astra | Gated fallback after evidence-backed Sol attempts or explicit user request |
 
 The router does **not** pretend to switch the model of an already-running main task. It dispatches separate subagents and reports the actual route used.
+
+## GPT-6.1 Sol policy (0.2.0)
+
+Generic Sol and all default Sol profiles/phases use `gpt-6.1-sol`; the root defaults to medium. Use low for clearly bounded nonmechanical fixes, medium for ordinary features/debugging, high for complex/security/concurrency work, and xhigh for an evidence-backed serious retry after one complex Sol failure. Mechanical work stays on Luna low; independent routine verification uses Luna medium. The stable Sol profile IDs retain medium/high/high defaults; native roles with locked effort require a default worker with explicit model/effort for low or xhigh.
+
+Automatic Astra still requires two distinct evidence-backed tested Sol hypotheses, an unresolved high-consequence issue, and `ESCALATION_REASON`; prefer the serious GPT-6.1 Sol xhigh retry first. A numeric failure count attests to those attempts and does not prove them. Explicit Astra requests bypass the attempt count while preserving other user constraints.
+
+If GPT-6.1 Sol is unavailable in the runtime, disclose that limitation before using available `gpt-6-sol` at the same effort when compatible with user instructions. Do not silently substitute models or count availability/tool failures toward Astra. Requests requiring only GPT-6.1 Sol must receive the blocker. Explicit `gpt-6-sol` requests retain that model; “use gpt-6.1-sol”, “6.1 Sol”, and Chinese “6.1sol” select GPT-6.1 Sol. See [official GPT-6.1 Sol documentation](https://developers.openai.com/api/docs/models/gpt-6.1-sol).
 
 ## When to use it
 
@@ -66,7 +74,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\UNINSTALL.ps1
 - Codex CLI / Codex desktop with plugin and subagent support
 - Access to the models used by the configured workers
 
-The GPT-6 update was tested against Codex CLI `0.154.0` on Windows. Model availability depends on account rollout and workspace settings.
+The earlier GPT-6 update was tested against Codex CLI `0.154.0` on Windows. Version 0.2.0 adds isolated installer and routing regression coverage. Model availability depends on account rollout and workspace settings.
 
 ## What the installer changes
 
@@ -79,7 +87,7 @@ The installer is idempotent and creates timestamped backups before configuration
 - root Codex defaults in `%USERPROFILE%\.codex\config.toml`
 - install state and backups under `%USERPROFILE%\.codex\smart-model-router`
 
-The default root model is set to `gpt-6-sol` with `medium` reasoning. Uninstall restores the pre-install root/agent settings recorded in install state and preserves owned files that were modified after installation. Existing, unchanged Terra-named profiles from v0.1.0 are removed during upgrade.
+The default root model is set to `gpt-6.1-sol` with `medium` reasoning. Uninstall restores the pre-install root/agent settings recorded in install state and preserves owned files that were modified after installation. Existing, unchanged Terra-named profiles from v0.1.0 are removed during upgrade.
 
 ## Routing overview
 
@@ -134,9 +142,10 @@ From the plugin package directory:
 cd .\plugins\smart-model-router
 python -m unittest discover -s .\tests -v
 python .\skills\smart-model-router\scripts\router.py simulate
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\test_installation.ps1
 ```
 
-GitHub Actions runs the same Python test suite and router simulation on `windows-latest` for pushes and pull requests targeting `main`.
+GitHub Actions runs the same Python test suite, PowerShell install/reinstall/uninstall tests, and router simulation on `windows-latest` for pushes and pull requests targeting `main`.
 
 ## Repository layout
 
@@ -170,7 +179,7 @@ GitHub Actions runs the same Python test suite and router simulation on `windows
 
 ## Version
 
-Current plugin build: **`0.1.0+codex.20260923020300`** (GPT-6 routing update). The original v0.1.0 release remains available as historical reference.
+Current plugin build: **`0.2.0`** (GPT-6.1 Sol-first release). The original v0.1.0 release remains available as historical reference.
 
 See [CHANGELOG.md](./CHANGELOG.md) for the current changes and [RELEASE_NOTES_v0.1.0.md](./RELEASE_NOTES_v0.1.0.md) for the original release.
 

@@ -2,6 +2,17 @@
 
 All notable changes to Smart Model Router are documented here.
 
+## [0.2.0] - 2026-09-30
+
+- Make GPT-6.1 Sol the default root and every default Sol phase/profile; retain stable Sol profile IDs and raise policy version to 2.1.0.
+- Add low effort for bounded behavioral fixes and xhigh for a serious retry after one evidence-backed complex Sol failure, preserving conditional phases and analysis-only constraints.
+- Preserve Astra's two distinct evidence-backed attempts, explicit reason, high-consequence gate, and explicit user bypass; require coordinator evidence checks and prefer the serious Sol retry before automatic escalation.
+- Recognize GPT-6.1 Sol identifiers, generic Sol, and Chinese 6.1sol overrides; preserve explicit older GPT-6 Sol requests and display full model names correctly.
+- Document transparent same-effort GPT-6 Sol fallback only when GPT-6.1 Sol is unavailable and user constraints permit it. Treat runtime availability as infrastructure.
+- Preserve installer ownership/hash protections and original settings, allow empty backup text, and propagate child failures through root PowerShell wrappers.
+- Extend routing and isolated install/reinstall/uninstall regressions, including empty/new configuration and wrapper exit codes; run PowerShell installation tests in CI.
+- Update active English/Chinese documentation with the official GPT-6.1 Sol model source; preserve historical release notes and notices.
+
 ## [0.1.0+codex.20260923020300] - 2026-09-23
 
 ### GPT-6 routing update

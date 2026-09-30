@@ -1,6 +1,6 @@
 name = "smart_router_sol_builder"
-description = "GPT-6 Sol Medium worker for ordinary software development."
-model = "gpt-6-sol"
+description = "GPT-6.1 Sol Medium worker for ordinary software development."
+model = "gpt-6.1-sol"
 model_reasoning_effort = "medium"
 sandbox_mode = "workspace-write"
 developer_instructions = """

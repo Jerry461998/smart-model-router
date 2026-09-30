@@ -8,7 +8,7 @@ $script:SmrGlobalBegin = '<!-- SMART-MODEL-ROUTER:BEGIN -->'
 $script:SmrGlobalEnd = '<!-- SMART-MODEL-ROUTER:END -->'
 
 function Write-Utf8NoBom {
-    param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][string]$Text)
+    param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][AllowEmptyString()][string]$Text)
     $parent = Split-Path -Parent $Path
     if ($parent -and -not (Test-Path -LiteralPath $parent)) {
         New-Item -ItemType Directory -Path $parent -Force | Out-Null
@@ -115,7 +115,7 @@ function Set-SmrConfig {
     }
     $rootBlock = @(
         $script:SmrRootBegin,
-        'model = "gpt-6-sol"',
+        'model = "gpt-6.1-sol"',
         'model_reasoning_effort = "medium"',
         $script:SmrRootEnd,
         ''

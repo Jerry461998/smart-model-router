@@ -4,3 +4,4 @@ if (-not (Test-Path -LiteralPath $uninstaller)) {
     throw "Smart Model Router is not installed at: $uninstaller"
 }
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File $uninstaller
+exit $LASTEXITCODE

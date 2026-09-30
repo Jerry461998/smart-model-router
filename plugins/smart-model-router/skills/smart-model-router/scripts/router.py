@@ -6,15 +6,16 @@ from __future__ import annotations
 import argparse
 import json
 import re
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from typing import Iterable
 
 
-POLICY_VERSION = "2.0.0"
+POLICY_VERSION = "2.1.0"
 MODELS = {
     "luna": "gpt-6-luna",
-    "sol": "gpt-6-sol",
+    "sol": "gpt-6.1-sol",
     "astra": "gpt-6-astra",
+    "sol_legacy": "gpt-6-sol",
 }
 
 
@@ -44,21 +45,26 @@ def _has(text: str, *patterns: str) -> bool:
 
 
 def _explicit_model(text: str) -> str | None:
-    for model in ("luna", "sol", "astra"):
+    aliases = {
+        "luna": r"(?:gpt-6-luna|(?:gpt[- ]?6\s+)?luna)",
+        "sol": r"(?:gpt-6\.1-sol|(?:gpt[- ]?)?6\.1\s*sol|sol)",
+        "sol_legacy": r"gpt-6-sol",
+        "astra": r"(?:gpt-6-astra|(?:gpt[- ]?6\s+)?astra)",
+    }
+    for model, alias in aliases.items():
         if _has(
             text,
-            rf"只(?:使用|用)\s*{model}",
-            rf"(?:这次|本次).*?用\s*{model}",
-            rf"only\s+use\s+{model}",
-            rf"use\s+{model}\b",
-            rf"用\s*{model}\b",
+            rf"只(?:使用|用)\s*{alias}(?![a-z0-9_.-])",
+            rf"(?:这次|本次).*?用\s*{alias}(?![a-z0-9_.-])",
+            rf"(?:only\s+use|use)\s+{alias}(?![a-z0-9_.-])",
+            rf"(?:使用|用)\s*{alias}(?![a-z0-9_.-])",
         ):
             return model
     return None
 
 
 def _forbids_astra(text: str) -> bool:
-    return _has(text, r"不要(?:使用|用|调用)\s*astra", r"禁止\s*astra", r"no\s+astra", r"do\s+not\s+use\s+astra")
+    return _has(text, r"不要(?:使用|用|调用)\s*(?:gpt-6-)?astra", r"禁止\s*(?:gpt-6-)?astra", r"no\s+(?:gpt-6-)?astra", r"do\s+not\s+use\s+(?:gpt-6-)?astra")
 
 
 def _analysis_only(text: str) -> bool:
@@ -69,7 +75,8 @@ def _observability(phases: Iterable[Phase]) -> list[str]:
     lines = ["Routing:"]
     for item in phases:
         suffix = " (conditional)" if item.mode == "conditional" else ""
-        short = item.model.replace("gpt-6-", "").title()
+        short = {"gpt-6.1-sol": "GPT-6.1 Sol", "gpt-6-sol": "GPT-6 Sol",
+                 "gpt-6-luna": "GPT-6 Luna", "gpt-6-astra": "GPT-6 Astra"}[item.model]
         lines.append(f"- {item.phase.title()} -> {short} {item.effort}{suffix}")
     return lines
 
@@ -86,9 +93,20 @@ def route_prompt(
     explicit = _explicit_model(lower)
     analysis_only = _analysis_only(lower)
 
+    def result(prompt, task_class, phases, *args):
+        # The failure count attests to evidence-backed reasoning attempts, never tool failures.
+        if sol_failures >= 1 and task_class in {
+            "architecture", "complex-debug", "complex-consistency", "complex", "analysis-only"
+        }:
+            phases = [replace(item, effort="xhigh", reason=item.reason + "; serious Sol retry after evidence-backed failure")
+                      if item.model == MODELS["sol"] and
+                      (item.effort == "high" or item.phase == "diagnose") else item
+                      for item in phases]
+        return _result(prompt, task_class, phases, *args)
+
     if explicit:
         effort = "xhigh" if explicit == "astra" else "medium"
-        if explicit == "sol":
+        if explicit in {"sol", "sol_legacy"}:
             effort = "high"
         if explicit == "luna":
             effort = "low"
@@ -100,11 +118,11 @@ def route_prompt(
                     "analyze" if analysis_only else "execute",
                     explicit,
                     effort,
-                    f"smart_router_{explicit}_explicit",
+                    f"smart_router_{'sol' if explicit == 'sol_legacy' else explicit}_explicit",
                     "explicit user model override",
                 )
             ]
-            return _result(text, "user-override", phases, forbidden_astra, explicit == "astra", escalation_reason)
+            return result(text, "user-override", phases, forbidden_astra, explicit == "astra", escalation_reason)
 
     astra_candidate = _has(
         lower,
@@ -121,21 +139,21 @@ def route_prompt(
     if astra_allowed:
         phases = [
             _phase(
-                "escalate",
+                "analyze" if analysis_only else "escalate",
                 "astra",
                 "xhigh",
                 "smart_router_astra_escalation",
                 f"ESCALATION_REASON: {escalation_reason.strip()}",
             )
         ]
-        return _result(text, "extreme", phases, forbidden_astra, True, escalation_reason)
+        return result(text, "extreme", phases, forbidden_astra, True, escalation_reason)
 
     if analysis_only:
-        model = "sol" if _has(lower, r"架构", r"并发", r"一致性", r"architecture", r"concurr", r"consistency") else "luna"
+        model = "sol" if _has(lower, r"架构|并发|一致性|生产|安全|迁移|事务", r"architecture|concurr|consistency|production|security|migration|transaction|cross[- ]service") else "luna"
         effort = "high" if model == "sol" else "low"
         worker = "smart_router_sol_expert" if model == "sol" else "smart_router_luna_explorer"
         phases = [_phase("analyze", model, effort, worker, "analysis-only user constraint")]
-        return _result(text, "analysis-only", phases, forbidden_astra, False, escalation_reason)
+        return result(text, "analysis-only", phases, forbidden_astra, False, escalation_reason)
 
     if _has(
         lower,
@@ -149,7 +167,7 @@ def route_prompt(
             _phase("verify", "luna", "medium", "smart_router_luna_verifier", "deterministic workflow and configuration checks"),
             _phase("review", "sol", "high", "smart_router_sol_expert", "consequential production architecture review", "conditional"),
         ]
-        return _result(text, "architecture", phases, forbidden_astra, False, escalation_reason)
+        return result(text, "architecture", phases, forbidden_astra, False, escalation_reason)
 
     if _has(
         lower,
@@ -163,7 +181,7 @@ def route_prompt(
             _phase("expert", "sol", "high", "smart_router_sol_expert", "production-only cross-service ambiguity after initial diagnosis", "conditional"),
             _phase("verify", "luna", "medium", "smart_router_luna_verifier", "targeted regression and configuration verification", "conditional"),
         ]
-        return _result(text, "complex-debug", phases, forbidden_astra, False, escalation_reason)
+        return result(text, "complex-debug", phases, forbidden_astra, False, escalation_reason)
 
     if _has(
         lower,
@@ -176,7 +194,7 @@ def route_prompt(
             _phase("implement", "sol", "high", "smart_router_sol_diagnostician", "bounded fix guided by the expert result"),
             _phase("verify", "luna", "medium", "smart_router_luna_verifier", "deterministic regression and concurrency tests"),
         ]
-        return _result(text, "complex-consistency", phases, forbidden_astra, False, escalation_reason)
+        return result(text, "complex-consistency", phases, forbidden_astra, False, escalation_reason)
 
     if _has(
         lower,
@@ -188,7 +206,7 @@ def route_prompt(
             _phase("implement", "sol", "medium", "smart_router_sol_builder", "ordinary bounded full-stack feature implementation"),
             _phase("verify", "luna", "medium", "smart_router_luna_verifier", "independent behavior and regression verification"),
         ]
-        return _result(text, "ordinary-feature", phases, forbidden_astra, False, escalation_reason)
+        return result(text, "ordinary-feature", phases, forbidden_astra, False, escalation_reason)
 
     if _has(
         lower,
@@ -200,7 +218,7 @@ def route_prompt(
             _phase("implement", "sol", "medium", "smart_router_sol_builder", "ordinary product implementation"),
             _phase("verify", "luna", "medium", "smart_router_luna_verifier", "independent routine verification"),
         ]
-        return _result(text, "ordinary-feature", phases, forbidden_astra, False, escalation_reason)
+        return result(text, "ordinary-feature", phases, forbidden_astra, False, escalation_reason)
 
     if _has(
         lower,
@@ -214,7 +232,16 @@ def route_prompt(
         r"margin.*(?:20px|16px)",
     ):
         phases = [_phase("execute", "luna", "low", "smart_router_luna_explorer", "clear deterministic or mechanical task")]
-        return _result(text, "mechanical", phases, forbidden_astra, False, escalation_reason)
+        return result(text, "mechanical", phases, forbidden_astra, False, escalation_reason)
+
+    if not _has(lower, r"生产|production|架构|architecture|security|安全|concurr|并发|transaction|一致性|migration|迁移") and _has(
+        lower, r"(?:fix|修复).*?(?:off-by-one|边界错误|guard clause|空值检查|local null check)",
+    ):
+        phases = [
+            _phase("implement", "sol", "low", "smart_router_sol_builder", "clearly bounded local behavioral fix"),
+            _phase("verify", "luna", "medium", "smart_router_luna_verifier", "independent targeted behavior verification"),
+        ]
+        return result(text, "bounded-fix", phases, forbidden_astra, False, escalation_reason)
 
     if _has(
         lower,
@@ -226,14 +253,14 @@ def route_prompt(
             _phase("implement", "sol", "high", "smart_router_sol_diagnostician", "bounded implementation from expert guidance", "conditional"),
             _phase("verify", "luna", "medium", "smart_router_luna_verifier", "independent verification", "conditional"),
         ]
-        return _result(text, "complex", phases, forbidden_astra, False, escalation_reason)
+        return result(text, "complex", phases, forbidden_astra, False, escalation_reason)
 
     phases = [
         _phase("explore", "luna", "low", "smart_router_luna_explorer", "cheap bounded context collection"),
         _phase("implement", "sol", "medium", "smart_router_sol_builder", "default ordinary development worker"),
         _phase("verify", "luna", "medium", "smart_router_luna_verifier", "independent routine verification"),
     ]
-    return _result(text, "ordinary", phases, forbidden_astra, False, escalation_reason)
+    return result(text, "ordinary", phases, forbidden_astra, False, escalation_reason)
 
 
 def _result(
@@ -265,7 +292,8 @@ def _build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
     route = subparsers.add_parser("route", help="Classify a task and return a JSON phase plan")
     route.add_argument("--text", required=True)
-    route.add_argument("--sol-failures", type=int, default=0)
+    route.add_argument("--sol-failures", type=int, default=0,
+                       help="Count distinct completed evidence-backed Sol reasoning attempts; excludes infrastructure failures")
     route.add_argument("--escalation-reason", default="")
     simulate = subparsers.add_parser("simulate", help="Run the standard announcement-feature simulation")
     simulate.add_argument("--pretty", action="store_true")

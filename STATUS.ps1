@@ -4,3 +4,4 @@ if (-not (Test-Path -LiteralPath $status)) {
     throw "Smart Model Router is not installed at: $status"
 }
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File $status
+exit $LASTEXITCODE

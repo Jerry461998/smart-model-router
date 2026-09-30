@@ -3,8 +3,8 @@
 `smart-model-router` is a personal Codex plugin and global configuration layer that routes bounded software-development phases to real model-specific subagents:
 
 - GPT-6 Luna: fast exploration, mechanical work, and routine verification.
-- GPT-6 Sol Medium: normal implementation and medium-complex debugging.
-- GPT-6 Sol High: architecture, production, concurrency, transaction, security, and consistency reasoning.
+- GPT-6.1 Sol Medium: normal implementation and medium-complex debugging.
+- GPT-6.1 Sol High: architecture, production, concurrency, transaction, security, and consistency reasoning.
 - GPT-6 Astra: final escalation after two evidence-backed Sol attempts, or when the user explicitly requests Astra.
 
 The active main task does not change models. The coordinator starts separate workers with explicit `model` and `reasoning_effort`, receives compact results, checks the actual diff/tests, and reports the actual worker route.
@@ -29,6 +29,14 @@ Coordinator integrates, verifies, and reports
 ```
 
 The plugin contains the skill and deterministic advisor. The installer also places six Codex custom-agent profiles under the user Codex directory and applies a small managed global instruction block. Native Codex collaboration tools perform the actual dispatch; the Python advisor never pretends to switch the current task model.
+
+## GPT-6.1 Sol policy (0.2.0)
+
+Generic Sol and all default Sol profiles/phases use `gpt-6.1-sol`; the root defaults to medium. Use low for clearly bounded nonmechanical fixes, medium for ordinary features/debugging, high for complex/security/concurrency work, and xhigh for an evidence-backed serious retry after one complex Sol failure. Mechanical work stays on Luna low; independent routine verification uses Luna medium. The stable Sol profile IDs retain medium/high/high defaults; native roles with locked effort require a default worker with explicit model/effort for low or xhigh.
+
+Automatic Astra still requires two distinct evidence-backed tested Sol hypotheses, an unresolved high-consequence issue, and `ESCALATION_REASON`; prefer the serious GPT-6.1 Sol xhigh retry first. A numeric failure count attests to those attempts and does not prove them. Explicit Astra requests bypass the attempt count while preserving other user constraints.
+
+If GPT-6.1 Sol is unavailable in the runtime, disclose that limitation before using available `gpt-6-sol` at the same effort when compatible with user instructions. Do not silently substitute models or count availability/tool failures toward Astra. Requests requiring only GPT-6.1 Sol must receive the blocker. Explicit `gpt-6-sol` requests retain that model; “use gpt-6.1-sol”, “6.1 Sol”, and Chinese “6.1sol” select GPT-6.1 Sol. See [official GPT-6.1 Sol documentation](https://developers.openai.com/api/docs/models/gpt-6.1-sol).
 
 ## Installation paths
 
@@ -124,6 +132,7 @@ Run the standard E2E route simulation:
 
 ```powershell
 python .\skills\smart-model-router\scripts\router.py simulate
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\test_installation.ps1
 ```
 
 ## Status and actual model evidence
@@ -136,7 +145,7 @@ Codex surfaces subagent cards/tasks in supported clients. For exact audit proof,
 
 ## Default root model
 
-The installer sets the personal default root to `gpt-6-sol` with `medium` reasoning. This is the recommended long-term normal setting. A root task already started with Sol remains Sol, but the global rule still instructs it to dispatch simple bounded phases to Luna. GPT-6 has Luna, Sol, and Astra; it has no Terra tier.
+The installer sets the personal default root to `gpt-6.1-sol` with `medium` reasoning. This is the recommended long-term normal setting. A root task already started with Sol remains Sol, but the global rule still instructs it to dispatch simple bounded phases to Luna. GPT-6 has Luna, Sol, and Astra; it has no Terra tier.
 
 ## Windows notes
 
@@ -167,4 +176,4 @@ Update the source package, refresh the plugin cachebuster, run its tests and val
 
 ## Open-source references
 
-The design considered `orange-the-weak/codex-auto-model-router` and `capitalparser/codex-model-router`, both MIT-licensed. This implementation borrows architectural ideas such as deterministic classification, bounded worker prompts, fail-open handling, evidence-gated escalation, and actual-execution reporting. It is an original implementation adapted for a global Windows installation, GPT-6 Sol Medium root default, explicit Astra gate, this machine's current Codex schema, and the requested routing cases. See `THIRD_PARTY_NOTICES.md`.
+The design considered `orange-the-weak/codex-auto-model-router` and `capitalparser/codex-model-router`, both MIT-licensed. This implementation borrows architectural ideas such as deterministic classification, bounded worker prompts, fail-open handling, evidence-gated escalation, and actual-execution reporting. It is an original implementation adapted for a global Windows installation, GPT-6.1 Sol Medium root default, explicit Astra gate, this machine's current Codex schema, and the requested routing cases. See `THIRD_PARTY_NOTICES.md`.

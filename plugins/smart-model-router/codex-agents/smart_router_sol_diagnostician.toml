@@ -1,6 +1,6 @@
 name = "smart_router_sol_diagnostician"
-description = "GPT-6 Sol High worker for demanding debugging and integration."
-model = "gpt-6-sol"
+description = "GPT-6.1 Sol High worker for demanding debugging and integration."
+model = "gpt-6.1-sol"
 model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 developer_instructions = """

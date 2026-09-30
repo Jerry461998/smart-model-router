@@ -34,3 +34,7 @@ jobs:
       - name: Run router simulation
         shell: pwsh
         run: python plugins/smart-model-router/skills/smart-model-router/scripts/router.py simulate
+
+      - name: Run PowerShell installation tests
+        shell: pwsh
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File plugins/smart-model-router/tests/test_installation.ps1
