@@ -37,7 +37,7 @@ try {
     Assert-True ($acceptedCleanup -eq (Resolve-Path -LiteralPath $codexRoot).ProviderPath) 'equivalent temp provider path rejected'
     $prefixSibling = Join-Path $tempRoot '.codex-sibling'
     New-Item -ItemType Directory -Path $prefixSibling -Force | Out-Null
-    foreach ($rejectedCleanup in @($tempRoot, $prefixSibling)) {
+    foreach ($rejectedCleanup in @($codexRoot, $prefixSibling)) {
         $cleanupRejected = $false
         try {
             Resolve-TestCleanupTarget -Path $rejectedCleanup -ApprovedTempRoot $codexRoot | Out-Null
