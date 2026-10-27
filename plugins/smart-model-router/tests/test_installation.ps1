@@ -5,8 +5,21 @@ function Assert-True {
     if (-not $Condition) { throw "ASSERTION FAILED: $Message" }
 }
 
+function Resolve-TestCleanupTarget {
+    param([string]$Path, [string]$ApprovedTempRoot)
+    # Resolve both through the filesystem provider. GetFullPath only normalizes
+    # syntax and can retain a different Windows 8.3 representation than Resolve-Path.
+    $resolved = (Resolve-Path -LiteralPath $Path).ProviderPath
+    $tempPrefix = (Resolve-Path -LiteralPath $ApprovedTempRoot).ProviderPath.TrimEnd('\') + '\'
+    if (-not $resolved.StartsWith($tempPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Unexpected test cleanup target: $resolved"
+    }
+    return $resolved
+}
+
 $packageRoot = Split-Path -Parent $PSScriptRoot
-$tempRoot = Join-Path $env:TEMP ('smart-model-router-test-' + [guid]::NewGuid().ToString('N'))
+$approvedTempRoot = (Resolve-Path -LiteralPath $env:TEMP).ProviderPath
+$tempRoot = Join-Path $approvedTempRoot ('smart-model-router-test-' + [guid]::NewGuid().ToString('N'))
 $codexRoot = Join-Path $tempRoot '.codex'
 $pluginHome = Join-Path $tempRoot 'plugins'
 $marketplacePath = Join-Path $tempRoot '.agents\plugins\marketplace.json'
@@ -18,6 +31,23 @@ $expectedAgentLine = @($fixtureAgentsText -split "`r?`n" | Where-Object { $_ -an
 
 try {
     New-Item -ItemType Directory -Path $codexRoot -Force | Out-Null
+    # Equivalent provider paths are accepted; the approved root itself and a
+    # sibling sharing its name prefix are rejected without deleting anything.
+    $acceptedCleanup = Resolve-TestCleanupTarget -Path $codexRoot -ApprovedTempRoot (Join-Path $tempRoot '.')
+    Assert-True ($acceptedCleanup -eq (Resolve-Path -LiteralPath $codexRoot).ProviderPath) 'equivalent temp provider path rejected'
+    $prefixSibling = Join-Path $tempRoot '.codex-sibling'
+    New-Item -ItemType Directory -Path $prefixSibling -Force | Out-Null
+    foreach ($rejectedCleanup in @($tempRoot, $prefixSibling)) {
+        $cleanupRejected = $false
+        try {
+            Resolve-TestCleanupTarget -Path $rejectedCleanup -ApprovedTempRoot $codexRoot | Out-Null
+        } catch {
+            if (-not $_.Exception.Message.StartsWith('Unexpected test cleanup target:')) { throw }
+            $cleanupRejected = $true
+        }
+        Assert-True $cleanupRejected 'cleanup accepted root or prefix-sharing sibling'
+    }
+    Write-Output 'CLEANUP_BOUNDARY_OK'
     New-Item -ItemType Directory -Path (Split-Path -Parent $marketplacePath) -Force | Out-Null
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'fixtures\config.toml') -Destination (Join-Path $codexRoot 'config.toml')
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'fixtures\AGENTS.md') -Destination (Join-Path $codexRoot 'AGENTS.md')
@@ -193,11 +223,7 @@ try {
     Write-Output 'INSTALLATION_TESTS_OK'
 } finally {
     if (Test-Path -LiteralPath $tempRoot) {
-        $resolved = (Resolve-Path -LiteralPath $tempRoot).Path
-        $tempPrefix = [System.IO.Path]::GetFullPath($env:TEMP).TrimEnd('\') + '\'
-        if (-not $resolved.StartsWith($tempPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
-            throw "Unexpected test cleanup target: $resolved"
-        }
+        $resolved = Resolve-TestCleanupTarget -Path $tempRoot -ApprovedTempRoot $approvedTempRoot
         Remove-Item -LiteralPath $resolved -Recurse -Force
     }
 }
