@@ -2,6 +2,14 @@
 
 All notable changes to Smart Model Router are documented here.
 
+## [0.3.0] - 2026-10-27
+
+- Add GPT-6.1 Terra medium builder and visual reviewer profiles, scoped local fixes, screenshot/UI acceptance, and defined computer-use task routing.
+- Preserve Luna mechanical/routine verification roles, Sol root and ordinary development roles, high-consequence Sol precedence, and the two-evidenced-attempt Astra gate.
+- Support explicit English/Chinese Terra model aliases and only/analyze-only/no-edit constraints; require disclosed compatible fallback and block substitution for Terra-only requests.
+- Preserve valid current root effort and managed agent settings on upgrade; safely retain current owned Terra profiles and retire only unchanged owned old diagnostician profiles.
+- Expand routing and isolated Windows install/status/reinstall/uninstall regression coverage; update all current guides and metadata. No comparative model quality benchmark is claimed.
+
 ## [0.2.0] - 2026-09-30
 
 - Make GPT-6.1 Sol the default root and every default Sol phase/profile; retain stable Sol profile IDs and raise policy version to 2.1.0.

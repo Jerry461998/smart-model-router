@@ -137,8 +137,8 @@ class SolFirstReleaseTests(unittest.TestCase):
     def test_release_and_all_sol_profiles(self):
         package = SCRIPT.parents[3]
         manifest = json.loads((package / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
-        self.assertEqual(manifest["version"], "0.2.0")
-        self.assertEqual(MODULE.POLICY_VERSION, "2.1.0")
+        self.assertEqual(manifest["version"], "0.3.0")
+        self.assertEqual(MODULE.POLICY_VERSION, "3.0.0")
         self.assertEqual(route("ordinary feature")["default_root"],
                          {"model": "gpt-6.1-sol", "effort": "medium"})
         for profile, effort in (("builder", "medium"), ("diagnostician", "high"), ("expert", "high")):
@@ -196,10 +196,10 @@ class SolFirstReleaseTests(unittest.TestCase):
         forbidden = route("use gpt-6-astra but do not use gpt-6-astra")
         self.assertNotIn("gpt-6-astra", models(forbidden))
 
-    def test_bounded_behavior_fix_low_and_complex_guard(self):
+    def test_bounded_behavior_fix_terra_and_complex_guard(self):
         result = route("fix off-by-one in a local helper")
-        self.assertEqual(models(result), ["gpt-6.1-sol", "gpt-6-luna"])
-        self.assertEqual(result["phases"][0]["effort"], "low")
+        self.assertEqual(models(result), ["gpt-6.1-terra", "gpt-6-luna"])
+        self.assertEqual(result["phases"][0]["effort"], "medium")
         complex_result = route("fix off-by-one in production migration")
         self.assertEqual(complex_result["task_class"], "complex")
 
@@ -207,6 +207,68 @@ class SolFirstReleaseTests(unittest.TestCase):
         result = route("ordinary feature missing dependency and bad path", sol_failures=3)
         self.assertEqual(result["phases"][1]["effort"], "medium")
         self.assertFalse(result["escalation"]["astra_selected"])
+
+
+class TerraReleaseTests(unittest.TestCase):
+    def test_terra_explicit_aliases_and_read_only(self):
+        for alias in ("Terra", "gpt-6.1-terra", "GPT-6.1 Terra", "6.1terra"):
+            for prefix in ("只使用", "用", "use ", "use only ", "only use "):
+                with self.subTest(alias=alias, prefix=prefix):
+                    result = route(prefix + alias + " analyze only production security")
+                    self.assertEqual(models(result), ["gpt-6.1-terra"])
+                    self.assertEqual(phases(result), ["analyze"])
+                    self.assertFalse(result["constraints"]["can_modify_files"])
+                    self.assertIn("GPT-6.1 Terra medium", result["observability"][1])
+        result = route("Terra only fix a helper")
+        self.assertEqual(models(result), ["gpt-6.1-terra"])
+        self.assertTrue(result["constraints"]["model_only"])
+        self.assertEqual(result["execution"], "plan-only-not-dispatched")
+
+    def test_terra_prohibition_and_conflicting_only(self):
+        for prefix in ("do not use Terra", "不要用Terra", "禁止使用 gpt-6.1-terra", "no Terra"):
+            for task in ("fix off-by-one", "review screenshot UI acceptance", "analyze only review screenshot"):
+                result = route(prefix + "; " + task)
+                self.assertNotIn("gpt-6.1-terra", models(result))
+                self.assertTrue(result["constraints"]["terra_forbidden"])
+        for prompt in ("only use Terra but do not use Terra", "只使用 Terra，但不要用Terra",
+                       "只使用6.1terra，但不要用6.1terra", "only use GPT-6.1 Terra but no Terra"):
+            result = route(prompt)
+            self.assertEqual(result["task_class"], "constraint-conflict")
+            self.assertEqual(result["phases"], [])
+            self.assertIn("blocker", result)
+
+    def test_visual_intent_and_defined_computer_use(self):
+        for prompt in ("检查截图中的布局", "review screenshot UI acceptance", "verify computer-use checkout flow"):
+            result = route(prompt)
+            self.assertEqual(models(result), ["gpt-6.1-terra"])
+            self.assertEqual(result["phases"][0]["worker"], "smart_router_terra_visual_reviewer")
+        for prompt in ("screenshot stored in filename", "computer-use library CRUD module"):
+            self.assertNotIn("gpt-6.1-terra", models(route(prompt)))
+        result = route("只分析截图中的界面布局，不改代码")
+        self.assertEqual(phases(result), ["analyze"])
+        self.assertFalse(result["constraints"]["can_modify_files"])
+        result = route("根据截图修复界面布局")
+        self.assertEqual(models(result), ["gpt-6.1-terra", "gpt-6.1-terra", "gpt-6-luna", "gpt-6.1-terra"])
+
+    def test_consequence_precedes_visual_and_ordinary(self):
+        for risk in ("production", "security", "authentication", "transaction", "concurrency", "migration", "跨服务一致性"):
+            result = route("review screenshot UI and fix off-by-one in ordinary CRUD " + risk)
+            self.assertNotIn("gpt-6.1-terra", models(result))
+            self.assertIn("gpt-6.1-sol", models(result))
+        result = route("只分析截图中的生产并发问题")
+        self.assertEqual(models(result), ["gpt-6.1-sol"])
+        self.assertEqual(phases(result), ["analyze"])
+
+    def test_profiles_and_fallback_contract(self):
+        package = SCRIPT.parents[3]
+        for role in ("builder", "visual_reviewer"):
+            text = (package / "codex-agents" / f"smart_router_terra_{role}.toml").read_text(encoding="utf-8")
+            self.assertIn('model = "gpt-6.1-terra"', text)
+            self.assertIn('model_reasoning_effort = "medium"', text)
+            self.assertIn("Do not delegate", text)
+        result = route("只使用 Terra")
+        self.assertIn("Terra-only blocks fallback", result["availability_policy"])
+        self.assertNotIn("gpt-6-astra", models(route("review screenshot", sol_failures=3, escalation_reason="missing model")))
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@
 `smart-model-router` is a personal Codex plugin and global configuration layer that routes bounded software-development phases to real model-specific subagents:
 
 - GPT-6 Luna: fast exploration, mechanical work, and routine verification.
+- GPT-6.1 Terra Medium: scoped local fixes and visual/computer-use acceptance.
 - GPT-6.1 Sol Medium: normal implementation and medium-complex debugging.
 - GPT-6.1 Sol High: architecture, production, concurrency, transaction, security, and consistency reasoning.
 - GPT-6 Astra: final escalation after two evidence-backed Sol attempts, or when the user explicitly requests Astra.
@@ -21,6 +22,7 @@ Global AGENTS.md managed rule + implicit smart-model-router skill
 Deterministic phase classification (router.py)
         |
         +--> Luna explorer / verifier
+        +--> Terra builder / visual reviewer
         +--> Sol builder / diagnostician / expert
         `--> Astra escalation (gated)
         |
@@ -28,11 +30,21 @@ Deterministic phase classification (router.py)
 Coordinator integrates, verifies, and reports
 ```
 
-The plugin contains the skill and deterministic advisor. The installer also places six Codex custom-agent profiles under the user Codex directory and applies a small managed global instruction block. Native Codex collaboration tools perform the actual dispatch; the Python advisor never pretends to switch the current task model.
+The plugin contains the skill and deterministic advisor. The installer also places eight Codex custom-agent profiles under the user Codex directory and applies a small managed global instruction block. Native Codex collaboration tools perform the actual dispatch; the Python advisor never pretends to switch the current task model.
 
-## GPT-6.1 Sol policy (0.2.0)
+## GPT-6.1 Terra policy (0.3.0)
 
-Generic Sol and all default Sol profiles/phases use `gpt-6.1-sol`; the root defaults to medium. Use low for clearly bounded nonmechanical fixes, medium for ordinary features/debugging, high for complex/security/concurrency work, and xhigh for an evidence-backed serious retry after one complex Sol failure. Mechanical work stays on Luna low; independent routine verification uses Luna medium. The stable Sol profile IDs retain medium/high/high defaults; native roles with locked effort require a default worker with explicit model/effort for low or xhigh.
+Use `gpt-6.1-terra` medium for clearly bounded nonmechanical local fixes, screenshot/UI visual acceptance, and a defined computer-use verification flow when the task intent calls for it. Mechanical search/edits remain Luna low; independent routine functional checks remain Luna medium. Sol remains the root and the main worker for ordinary features and broader development. Production, security, architecture, migration, authentication, transactions, and concurrency take Sol precedence even when a prompt mentions a screenshot or UI.
+
+The profiles `smart_router_terra_builder` and `smart_router_terra_visual_reviewer` both use medium. Visual reviewers are read-only by default; only coordinator-assigned mutable paths permit edits. A bounded visual correction uses Terra review/build, Luna functional checks, and Terra visual reinspection. Merely mentioning a screenshot filename does not select Terra. These are intended routing responsibilities, not measured comparative quality claims.
+
+Explicit `use Terra`, `use gpt-6.1-terra`, `use GPT-6.1 Terra`, `只使用 Terra`, and `用6.1terra` select Terra while preserving no-edit/analyze-only scope. Check runtime/session metadata or a real dispatch result for availability. If Terra is absent, disclose the limitation before using available GPT-6.1 Sol medium when compatible with user constraints; requests requiring Terra only must report the blocker and must not silently fall back. Availability failures never count toward Sol/Astra escalation. The advisor emits a plan, not dispatch evidence.
+
+Fresh installs default to Sol medium; upgrades preserve the current valid root effort and current managed agent settings. Upgrades retain current Terra builder/reviewer profiles, retire only unchanged owned old Terra diagnostician profiles, and protect modified or unrelated profiles. Uninstall restores the original pre-install configuration and preserves modified agent files.
+
+## GPT-6.1 Sol policy
+
+Generic Sol and all default Sol profiles/phases use `gpt-6.1-sol`; the root defaults to medium. Use Terra medium for clearly bounded nonmechanical fixes and Sol medium for ordinary features/debugging, high for complex/security/concurrency work, and xhigh for an evidence-backed serious retry after one complex Sol failure. Mechanical work stays on Luna low; independent routine verification uses Luna medium. The stable Sol profile IDs retain medium/high/high defaults; native roles with locked effort require a default worker with explicit model/effort for low or xhigh.
 
 Automatic Astra still requires two distinct evidence-backed tested Sol hypotheses, an unresolved high-consequence issue, and `ESCALATION_REASON`; prefer the serious GPT-6.1 Sol xhigh retry first. A numeric failure count attests to those attempts and does not prove them. Explicit Astra requests bypass the attempt count while preserving other user constraints.
 
@@ -145,7 +157,7 @@ Codex surfaces subagent cards/tasks in supported clients. For exact audit proof,
 
 ## Default root model
 
-The installer sets the personal default root to `gpt-6.1-sol` with `medium` reasoning. This is the recommended long-term normal setting. A root task already started with Sol remains Sol, but the global rule still instructs it to dispatch simple bounded phases to Luna. GPT-6 has Luna, Sol, and Astra; it has no Terra tier.
+The installer sets the personal default root to `gpt-6.1-sol` with `medium` reasoning. This is the recommended long-term normal setting. A root task already started with Sol remains Sol, but the global rule still instructs it to dispatch simple bounded phases to Luna. GPT-6.1 Terra supports scoped fixes and visual/computer-use verification alongside Luna, Sol, and Astra.
 
 ## Windows notes
 

@@ -101,7 +101,24 @@ function Get-SmrConfigSnapshot {
 }
 
 function Set-SmrConfig {
-    param([string]$Text)
+    param([string]$Text, [bool]$PreserveSettings = $false)
+    $preserved = @{}
+    $rootEffort = 'model_reasoning_effort = "medium"'
+    if ($PreserveSettings) {
+        $rootText = ($Text -split '(?m)^[ \t]*\[', 2)[0]
+        if ($rootText -match '(?m)^[ \t]*model_reasoning_effort[ \t]*=[ \t]*"(low|medium|high|xhigh|max)"[^\r\n]*') {
+            $rootEffort = $Matches[0].Trim()
+        }
+        $existingLines = New-LineList -Text $Text
+        $existingAgents = Find-SectionRange -Lines $existingLines -Name 'agents'
+        if ($existingAgents.Start -ge 0) {
+            for ($i = $existingAgents.Start + 1; $i -lt $existingAgents.End; $i++) {
+                if ($existingLines[$i] -match '^\s*(enabled|max_concurrent_threads_per_session|default_subagent_model|default_subagent_reasoning_effort|interrupt_message)\s*=') {
+                    $preserved[$Matches[1]] = $existingLines[$i]
+                }
+            }
+        }
+    }
     $lines = New-LineList -Text $Text
     Remove-MarkerBlock -Lines $lines -Begin $script:SmrRootBegin -End $script:SmrRootEnd
     Remove-MarkerBlock -Lines $lines -Begin $script:SmrAgentsBegin -End $script:SmrAgentsEnd
@@ -116,7 +133,7 @@ function Set-SmrConfig {
     $rootBlock = @(
         $script:SmrRootBegin,
         'model = "gpt-6.1-sol"',
-        'model_reasoning_effort = "medium"',
+        $rootEffort,
         $script:SmrRootEnd,
         ''
     )
@@ -153,6 +170,14 @@ function Set-SmrConfig {
             $script:SmrAgentsEnd,
             ''
         )) { [void]$lines.Add($line) }
+    }
+    if ($PreserveSettings) {
+        $managedRange = Find-SectionRange -Lines $lines -Name 'agents'
+        for ($i = $managedRange.Start + 1; $i -lt $managedRange.End; $i++) {
+            if ($lines[$i] -match '^\s*(enabled|max_concurrent_threads_per_session|default_subagent_model|default_subagent_reasoning_effort|interrupt_message)\s*=' -and $preserved.ContainsKey($Matches[1])) {
+                $lines[$i] = $preserved[$Matches[1]]
+            }
+        }
     }
     return (($lines -join "`r`n").TrimEnd() + "`r`n")
 }

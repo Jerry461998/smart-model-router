@@ -14,9 +14,17 @@
 
 Use low for repository search, file discovery, mechanical edits and deterministic transformations. Use medium for independent routine tests, lint, syntax and regression verification. Use high only when a bounded validation task needs more care.
 
-### GPT-6.1 Sol Low
+### GPT-6.1 Terra Medium
 
-Use low for a local nonmechanical behavior fix with a clear acceptance criterion, such as a bounded off-by-one correction or guard clause. Keep mechanical edits on Luna low and complex/security/production changes on Sol high.
+Use `gpt-6.1-terra` medium for clearly bounded nonmechanical local fixes, screenshot/UI visual acceptance, and a defined computer-use verification flow when the task intent calls for it. Mechanical search/edits remain Luna low; independent routine functional checks remain Luna medium. Sol remains the root and the main worker for ordinary features and broader development. Production, security, architecture, migration, authentication, transactions, and concurrency take Sol precedence even when a prompt mentions a screenshot or UI.
+
+The profiles `smart_router_terra_builder` and `smart_router_terra_visual_reviewer` both use medium. Visual reviewers are read-only by default; only coordinator-assigned mutable paths permit edits. A bounded visual correction uses Terra review/build, Luna functional checks, and Terra visual reinspection. Merely mentioning a screenshot filename does not select Terra. These are intended routing responsibilities, not measured comparative quality claims.
+
+Explicit `use Terra`, `use gpt-6.1-terra`, `use GPT-6.1 Terra`, `只使用 Terra`, and `用6.1terra` select Terra while preserving no-edit/analyze-only scope. Check runtime/session metadata or a real dispatch result for availability. If Terra is absent, disclose the limitation before using available GPT-6.1 Sol medium when compatible with user constraints; requests requiring Terra only must report the blocker and must not silently fall back. Availability failures never count toward Sol/Astra escalation. The advisor emits a plan, not dispatch evidence.
+
+Fresh installs default to Sol medium; upgrades preserve the current valid root effort and current managed agent settings. Upgrades retain current Terra builder/reviewer profiles, retire only unchanged owned old Terra diagnostician profiles, and protect modified or unrelated profiles. Uninstall restores the original pre-install configuration and preserves modified agent files.
+
+
 
 ### GPT-6.1 Sol Medium
 

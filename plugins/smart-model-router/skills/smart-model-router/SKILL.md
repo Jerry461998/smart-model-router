@@ -1,6 +1,6 @@
 ---
 name: smart-model-router
-description: Automatically route Codex software-development work across GPT-6 Luna, GPT-6.1 Sol, and evidence-gated Astra subagents. Use for implementation, debugging, architecture, repository exploration, refactoring, deployment, database, testing, or verification tasks where choosing bounded workers by difficulty avoids manual model selection. Do not use for ordinary conversation or non-development questions.
+description: Automatically route Codex software-development work across GPT-6 Luna, GPT-6.1 Sol, GPT-6.1 Terra, and evidence-gated Astra subagents. Use for implementation, debugging, architecture, repository exploration, refactoring, deployment, database, testing, or verification tasks where choosing bounded workers by difficulty avoids manual model selection. Do not use for ordinary conversation or non-development questions.
 ---
 
 # Smart Model Router
@@ -9,7 +9,7 @@ Keep the main task as coordinator. Route bounded software work to real model-spe
 
 ## First decision
 
-Honor explicit user overrides before this policy. “Only use Luna”, “do not use Astra”, “use Sol”, “analyze only”, and “do not edit” constrain every worker and phase. Generic “Sol” means `gpt-6.1-sol`; explicit `gpt-6.1-sol`, “6.1 Sol”, and Chinese “6.1sol” requests select it too. An explicit `gpt-6-sol` request retains that older Sol model. Preserve every other user constraint.
+Honor explicit user overrides before this policy. “Only use Luna”, “do not use Astra”, “use Sol”, “analyze only”, and “do not edit” constrain every worker and phase. Generic “Sol” means `gpt-6.1-sol`; explicit `gpt-6.1-sol`, “6.1 Sol”, and Chinese “6.1sol” requests select it too. Generic Terra, `gpt-6.1-terra`, “6.1 Terra”, and “6.1terra” select GPT-6.1 Terra medium; explicit Terra-only forbids fallback. An explicit `gpt-6-sol` request retains that older Sol model. Preserve every other user constraint.
 
 For a non-trivial or ambiguous request, run:
 
@@ -24,7 +24,8 @@ If Python is not on PATH, locate a configured Codex bundled Python runtime. For 
 | Work | Route |
 |---|---|
 | Mechanical search, text/CSS change, bulk deterministic edit | GPT-6 Luna low; verify with Luna when behavior can regress |
-| Clearly bounded nonmechanical local fix | GPT-6.1 Sol low → Luna medium verification |
+| Clearly bounded nonmechanical local fix | GPT-6.1 Terra medium → Luna medium verification |
+| Screenshot/UI acceptance or defined computer-use verification | Terra medium visual reviewer; read-only unless edits explicitly scoped |
 | Ordinary feature or CRUD | GPT-6 Luna low exploration → GPT-6.1 Sol medium implementation → GPT-6 Luna medium verification |
 | Medium debugging or integration | Luna collect → Sol medium diagnosis/implementation → Luna verify; raise Sol effort to high when evidence requires it |
 | Production-only, cross-service, architecture, security, migration, transaction, or concurrency reasoning | Luna collect → Sol high reasoning/implementation → Luna verification; Sol review only when consequential |
@@ -33,9 +34,19 @@ If Python is not on PATH, locate a configured Codex bundled Python runtime. For 
 
 Never escalate because a path is wrong, a command is malformed, a package is missing, a tool is unavailable, a fixture is absent, permissions fail, or the worker lacks context. Fix the infrastructure/input problem at the same model tier.
 
+## GPT-6.1 Terra policy (0.3.0)
+
+Use `gpt-6.1-terra` medium for clearly bounded nonmechanical local fixes, screenshot/UI visual acceptance, and a defined computer-use verification flow when the task intent calls for it. Mechanical search/edits remain Luna low; independent routine functional checks remain Luna medium. Sol remains the root and the main worker for ordinary features and broader development. Production, security, architecture, migration, authentication, transactions, and concurrency take Sol precedence even when a prompt mentions a screenshot or UI.
+
+The profiles `smart_router_terra_builder` and `smart_router_terra_visual_reviewer` both use medium. Visual reviewers are read-only by default; only coordinator-assigned mutable paths permit edits. A bounded visual correction uses Terra review/build, Luna functional checks, and Terra visual reinspection. Merely mentioning a screenshot filename does not select Terra. These are intended routing responsibilities, not measured comparative quality claims.
+
+Explicit `use Terra`, `use gpt-6.1-terra`, `use GPT-6.1 Terra`, `只使用 Terra`, and `用6.1terra` select Terra while preserving no-edit/analyze-only scope. Check runtime/session metadata or a real dispatch result for availability. If Terra is absent, disclose the limitation before using available GPT-6.1 Sol medium when compatible with user constraints; requests requiring Terra only must report the blocker and must not silently fall back. Availability failures never count toward Sol/Astra escalation. The advisor emits a plan, not dispatch evidence.
+
+Fresh installs default to Sol medium; upgrades preserve the current valid root effort and current managed agent settings. Upgrades retain current Terra builder/reviewer profiles, retire only unchanged owned old Terra diagnostician profiles, and protect modified or unrelated profiles. Uninstall restores the original pre-install configuration and preserves modified agent files.
+
 ## Sol availability and effort
 
-The default root and all default Sol phases use `gpt-6.1-sol`, root effort `medium`. Use `low` for a clearly bounded nonmechanical fix, `medium` for ordinary development/debugging, `high` for complex reasoning, and `xhigh` for an evidence-backed serious retry. Do not select `none` or `minimal`. See the [official GPT-6.1 Sol model documentation](https://developers.openai.com/api/docs/models/gpt-6.1-sol).
+The default root and all default Sol phases use `gpt-6.1-sol`, root effort `medium`. Use Terra `medium` for a clearly bounded nonmechanical fix; use Sol `medium` for ordinary development/debugging, `high` for complex reasoning, and `xhigh` for an evidence-backed serious retry. Do not select `none` or `minimal`. See the [official GPT-6.1 Sol model documentation](https://developers.openai.com/api/docs/models/gpt-6.1-sol).
 
 Use available runtime/session metadata or an actual dispatch result to check availability. If GPT-6.1 Sol is absent, report that limitation and transparently use `gpt-6-sol` at the same requested effort when available and compatible with user overrides. Never silently substitute a model or advance to Astra because a runtime model is unavailable. If the user requires only GPT-6.1 Sol, report the blocker instead. No CLI catalog detection or external model API is required by this policy.
 

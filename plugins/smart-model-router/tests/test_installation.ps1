@@ -45,6 +45,16 @@ try {
     # Simulate an owned prior release: upgrade old Sol profile contents using its recorded hashes.
     $statePath = Join-Path $codexRoot 'smart-model-router\install-state.json'
     $priorState = [System.IO.File]::ReadAllText($statePath, $utf8) | ConvertFrom-Json
+    $legacyName = 'smart_router_terra_diagnostician.toml'
+    $legacyPath = Join-Path $codexRoot "agents\$legacyName"
+    [System.IO.File]::WriteAllText($legacyPath, '# owned retired profile', $utf8)
+    $priorState.agentHashes | Add-Member -NotePropertyName $legacyName -NotePropertyValue ((Get-FileHash -LiteralPath $legacyPath -Algorithm SHA256).Hash)
+    # User settings in managed sections survive repeated upgrades.
+    $customConfig = $highRootConfig.Replace('max_concurrent_threads_per_session = 3', 'max_concurrent_threads_per_session = 5').Replace('interrupt_message = true', 'interrupt_message = false') + "`r`n[unrelated_same_keys]`r`nenabled = false`r`ninterrupt_message = true`r`n"
+    [System.IO.File]::WriteAllText((Join-Path $codexRoot 'config.toml'), $customConfig, $utf8)
+    $oldTerraBuilder = Join-Path $codexRoot 'agents\smart_router_terra_builder.toml'
+    [System.IO.File]::WriteAllText($oldTerraBuilder, '# historical owned Terra builder', $utf8)
+    $priorState.agentHashes.PSObject.Properties['smart_router_terra_builder.toml'].Value = (Get-FileHash -LiteralPath $oldTerraBuilder -Algorithm SHA256).Hash
     $priorState.version = '0.1.0+codex.20260923020300'
     foreach ($profile in @('builder', 'diagnostician', 'expert')) {
         $profileName = "smart_router_sol_$profile.toml"
@@ -58,14 +68,30 @@ try {
     $marketplace = [System.IO.File]::ReadAllText($marketplacePath, $utf8) | ConvertFrom-Json
     Assert-True (@($marketplace.plugins | Where-Object name -eq 'smart-model-router').Count -eq 1) 'idempotent install duplicated marketplace entry'
     $upgradedState = [System.IO.File]::ReadAllText($statePath, $utf8) | ConvertFrom-Json
-    Assert-True ($upgradedState.version -eq '0.2.0') 'upgrade version not recorded'
+    Assert-True ($upgradedState.version -eq '0.3.0') 'upgrade version not recorded'
     Assert-True ($upgradedState.originalConfig.modelLine -eq $priorState.originalConfig.modelLine) 'upgrade lost original root snapshot'
     foreach ($profile in @('builder', 'diagnostician', 'expert')) {
         $profileText = [System.IO.File]::ReadAllText((Join-Path $codexRoot "agents\smart_router_sol_$profile.toml"), $utf8)
         Assert-True ($profileText.Contains('model = "gpt-6.1-sol"')) 'owned old Sol profile did not upgrade'
     }
     $status = & (Join-Path $packageRoot 'scripts\status.ps1') -CodexRoot $codexRoot -PluginHome $pluginHome -MarketplacePath $marketplacePath -SkipPluginCommand | ConvertFrom-Json
-    Assert-True $status.defaultRootSolMedium 'upgraded root status incorrect'
+    Assert-True $status.defaultRootSol 'upgraded Sol root missing'
+    Assert-True ($status.rootEffort -eq 'high') 'upgrade reset user root effort'
+    Assert-True (-not $status.legacyTerraProfilesPresent) 'current Terra profiles treated as legacy'
+    Assert-True (-not (Test-Path -LiteralPath $legacyPath)) 'retired owned Terra profile remains'
+    $upgradedConfig = [System.IO.File]::ReadAllText((Join-Path $codexRoot 'config.toml'), $utf8)
+    Assert-True ($upgradedConfig.Contains('max_concurrent_threads_per_session = 5')) 'upgrade reset user agent settings'
+    Assert-True ($upgradedConfig -match '(?s)\[unrelated_same_keys\]\s+enabled = false\s+interrupt_message = true') 'upgrade changed unrelated same-name keys'
+    $maxConfig = $upgradedConfig.Replace('model_reasoning_effort = "high"', 'model_reasoning_effort = "max"')
+    [System.IO.File]::WriteAllText((Join-Path $codexRoot 'config.toml'), $maxConfig, $utf8)
+    foreach ($terraRole in @('builder', 'visual_reviewer')) {
+        Assert-True $status.profiles.PSObject.Properties["smart_router_terra_$terraRole.toml"].Value 'current Terra profile missing'
+    }
+    & (Join-Path $packageRoot 'scripts\install.ps1') -CodexRoot $codexRoot -PluginHome $pluginHome -MarketplacePath $marketplacePath -SkipPluginCommand | Out-Null
+    Assert-True (Test-Path -LiteralPath (Join-Path $codexRoot 'agents\smart_router_terra_builder.toml')) 'reinstall deleted current Terra builder'
+    $repeatStatus = & (Join-Path $packageRoot 'scripts\status.ps1') -CodexRoot $codexRoot -PluginHome $pluginHome -MarketplacePath $marketplacePath -SkipPluginCommand | ConvertFrom-Json
+    Assert-True ($repeatStatus.rootEffort -eq 'max') 'upgrade reset max root effort'
+
     Write-Output 'UPGRADE_OWNED_PROFILES_OK'
 
 
@@ -111,13 +137,13 @@ try {
         $scenarioConfig = [System.IO.File]::ReadAllText((Join-Path $scenarioCodex 'config.toml'), $utf8)
         Assert-True ($scenarioConfig.Contains('model = "gpt-6.1-sol"')) "$scenario root missing"
         $scenarioState = [System.IO.File]::ReadAllText((Join-Path $scenarioCodex 'smart-model-router\install-state.json'), $utf8) | ConvertFrom-Json
-        Assert-True ($scenarioState.version -eq '0.2.0') "$scenario installed version incorrect"
+        Assert-True ($scenarioState.version -eq '0.3.0') "$scenario installed version incorrect"
         foreach ($profile in @('builder', 'diagnostician', 'expert')) {
             $profileText = [System.IO.File]::ReadAllText((Join-Path $scenarioCodex "agents\smart_router_sol_$profile.toml"), $utf8)
             Assert-True ($profileText.Contains('model = "gpt-6.1-sol"')) "$scenario Sol profile wrong"
         }
         # User changes to owned profiles must block overwrite and survive uninstall.
-        $modifiedProfile = Join-Path $scenarioCodex 'agents\smart_router_sol_builder.toml'
+        $modifiedProfile = Join-Path $scenarioCodex 'agents\smart_router_terra_builder.toml'
         [System.IO.File]::AppendAllText($modifiedProfile, "`n# user customization`n", $utf8)
         $reinstallRejected = $false
         try {

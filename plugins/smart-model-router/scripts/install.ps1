@@ -56,9 +56,10 @@ if ($sourceResolved -ne $targetResolved) {
     }
 }
 
-# A 1.x installation used Terra-named profiles. Remove only unchanged files
+# Retire only the old Terra diagnostician; builder is now a current owned profile.
+# Remove only unchanged files
 # recorded as owned by the previous installation.
-foreach ($legacyName in @('smart_router_terra_builder.toml','smart_router_terra_diagnostician.toml')) {
+foreach ($legacyName in @('smart_router_terra_diagnostician.toml')) {
     if (-not $priorState -or -not $priorState.agentHashes) { continue }
     $legacyProperty = $priorState.agentHashes.PSObject.Properties[$legacyName]
     if (-not $legacyProperty) { continue }
@@ -91,7 +92,7 @@ foreach ($agentSource in Get-ChildItem -LiteralPath (Join-Path $sourceRoot 'code
     $installedAgentHashes[$agentSource.Name] = (Get-FileHash -LiteralPath $agentTarget -Algorithm SHA256).Hash
 }
 
-Write-Utf8NoBom -Path $configPath -Text (Set-SmrConfig -Text $configText)
+Write-Utf8NoBom -Path $configPath -Text (Set-SmrConfig -Text $configText -PreserveSettings ([bool]$priorState))
 $block = Read-Utf8Text -Path (Join-Path $sourceRoot 'global-agents-block.md')
 Write-Utf8NoBom -Path $globalAgentsPath -Text (Add-GlobalBlockText -Text $agentsText -Block $block)
 
